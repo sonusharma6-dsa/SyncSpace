@@ -5,13 +5,14 @@ import { getSocket } from '../hooks/useSocket';
 export const syncPendingEdits = async (workspaceId) => {
   try {
     const pendingEdits = await getPendingEdits();
+    const prefix = `workspace_${workspaceId}_doc_`;
     const filtered = pendingEdits
-      .filter(e => e.docId.startsWith(`workspace_${workspaceId}_`))
+      .filter(e => e.docId.startsWith(prefix))
       .sort((a, b) => a.timestamp - b.timestamp);
 
     for (const edit of filtered) {
       try {
-        const docId = edit.docId.replace(`workspace_${workspaceId}_doc_`, '');
+        const docId = edit.docId.slice(prefix.length);
         
         // Check for conflicts (if two edits within 2 seconds)
         const similar = filtered.filter(e => e.docId === edit.docId && Math.abs(e.timestamp - edit.timestamp) < 2000 && e.id !== edit.id);

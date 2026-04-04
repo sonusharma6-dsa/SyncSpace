@@ -16,7 +16,7 @@ const WorkspacePage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { currentWorkspace, setCurrentWorkspace, documents, setDocuments, tasks, setTasks, activeDocument, setActiveDocument } = useWorkspace();
-  const socket = useSocket(document.cookie.split('token=')[1]?.split(';')[0] || localStorage.getItem('token'));
+  const socket = useSocket(user?._id);
   const isOffline = useOffline();
   const [activeTab, setActiveTab] = useState('editor');
   const [onlineUsers, setOnlineUsers] = useState([]);

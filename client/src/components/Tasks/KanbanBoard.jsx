@@ -82,7 +82,7 @@ const KanbanBoard = ({ tasks, setTasks, workspaceId, socket, userId }) => {
             onDrop={() => handleDrop(col.id)}
             onDragLeave={() => setDragOver(null)}
             style={{
-              flex: 1, minWidth: '240px', background: '#F9FAFB',
+              flex: 1, minWidth: '240px',
               borderRadius: '10px', padding: '12px',
               border: dragOver === col.id ? `2px dashed ${col.color}` : '2px solid transparent',
               background: dragOver === col.id ? '#F5F3FF' : '#F9FAFB',

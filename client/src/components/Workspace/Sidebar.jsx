@@ -4,7 +4,7 @@ import InviteModal from './InviteModal';
 import axios from 'axios';
 
 const Sidebar = ({ workspaceId }) => {
-  const { currentWorkspace, documents, activeDocument, setActiveDocument } = useWorkspace();
+  const { currentWorkspace, documents, setDocuments, activeDocument, setActiveDocument } = useWorkspace();
   const [showInvite, setShowInvite] = useState(false);
   const [creatingDoc, setCreatingDoc] = useState(false);
 
@@ -12,8 +12,8 @@ const Sidebar = ({ workspaceId }) => {
     setCreatingDoc(true);
     try {
       const { data } = await axios.post(`/api/workspaces/${workspaceId}/documents`, { title: 'Untitled Document' });
+      setDocuments(prev => [...prev, data.document]);
       setActiveDocument(data.document);
-      window.location.reload();
     } catch (err) {
       console.error(err);
     } finally {
