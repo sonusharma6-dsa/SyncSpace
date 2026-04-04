@@ -6,7 +6,11 @@ const connectedUsers = new Map();
 const setupSocketHandlers = (io) => {
   io.use(async (socket, next) => {
     try {
-      const token = socket.handshake.auth.token || socket.handshake.headers.cookie?.split('token=')[1]?.split(';')[0];
+      const token = socket.handshake.auth.token || (() => {
+        const raw = socket.handshake.headers.cookie || '';
+        const match = raw.match(/(?:^|;\s*)token=([^;]+)/);
+        return match ? match[1] : undefined;
+      })();
       if (!token) return next(new Error('Authentication error'));
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
       socket.userId = decoded.id;

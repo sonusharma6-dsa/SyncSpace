@@ -1,6 +1,8 @@
 const Document = require('../models/Document.model');
 const Workspace = require('../models/Workspace.model');
 
+const MAX_HISTORY_LENGTH = 50;
+
 const checkAccess = async (workspaceId, userId) => {
   const workspace = await Workspace.findById(workspaceId);
   if (!workspace) return null;
@@ -61,7 +63,7 @@ exports.updateDocument = async (req, res, next) => {
     const { title, content } = req.body;
     if (content !== undefined) {
       document.history.push({ content: document.content, editedBy: document.lastEditedBy, timestamp: new Date() });
-      if (document.history.length > 50) document.history = document.history.slice(-50);
+      if (document.history.length > MAX_HISTORY_LENGTH) document.history = document.history.slice(-MAX_HISTORY_LENGTH);
       document.content = content;
       document.version += 1;
     }
