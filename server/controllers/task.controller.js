@@ -51,7 +51,9 @@ exports.createTask = async (req, res, next) => {
           });
         });
       }
-    } catch (_) {}
+    } catch (notifErr) {
+      console.error('Notification creation failed:', notifErr.message);
+    }
 
     res.status(201).json({ task: populated });
   } catch (err) {

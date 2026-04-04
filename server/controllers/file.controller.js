@@ -55,11 +55,11 @@ exports.uploadFile = async (req, res, next) => {
 
     const access = await checkAccess(req.params.id, req.user._id);
     if (!access) {
-      fs.unlink(req.file.path, () => {});
+      fs.unlink(path.join(uploadsDir, path.basename(req.file.filename)), () => {});
       return res.status(403).json({ message: 'Access denied' });
     }
     if (access.role === 'viewer') {
-      fs.unlink(req.file.path, () => {});
+      fs.unlink(path.join(uploadsDir, path.basename(req.file.filename)), () => {});
       return res.status(403).json({ message: 'Viewers cannot upload files' });
     }
 
@@ -110,7 +110,7 @@ exports.uploadFile = async (req, res, next) => {
 
     res.status(201).json({ file: populated });
   } catch (err) {
-    if (req.file) fs.unlink(req.file.path, () => {});
+    if (req.file) fs.unlink(path.join(uploadsDir, path.basename(req.file.filename)), () => {});
     next(err);
   }
 };
@@ -141,8 +141,9 @@ exports.deleteFile = async (req, res, next) => {
       file.uploadedBy.toString() === req.user._id.toString();
     if (!isOwnerOrUploader) return res.status(403).json({ message: 'Not authorized to delete this file' });
 
-    // Remove from disk
-    const filePath = path.join(uploadsDir, file.filename);
+    // Sanitize filename from DB to prevent path traversal
+    const safeFilename = path.basename(file.filename);
+    const filePath = path.join(uploadsDir, safeFilename);
     fs.unlink(filePath, () => {});
 
     await file.deleteOne();
@@ -157,19 +158,22 @@ exports.deleteFile = async (req, res, next) => {
 exports.serveFile = async (req, res, next) => {
   try {
     // Validate filename to prevent path traversal
-    const filename = path.basename(req.params.filename);
-    if (filename !== req.params.filename) {
+    const userFilename = path.basename(req.params.filename);
+    if (userFilename !== req.params.filename || !userFilename) {
       return res.status(400).json({ message: 'Invalid filename' });
     }
 
-    const file = await File.findOne({ filename });
+    // Look up file in DB by the sanitized user-provided filename
+    const file = await File.findOne({ filename: userFilename });
     if (!file) return res.status(404).json({ message: 'File not found' });
 
     // Check workspace membership
     const access = await checkAccess(file.workspace.toString(), req.user._id);
     if (!access) return res.status(403).json({ message: 'Access denied' });
 
-    const filePath = path.join(uploadsDir, filename);
+    // Use the DB-stored filename (not user input) for the actual disk path
+    const safeFilename = path.basename(file.filename);
+    const filePath = path.join(uploadsDir, safeFilename);
     if (!fs.existsSync(filePath)) return res.status(404).json({ message: 'File not found on disk' });
 
     res.setHeader('Content-Disposition', `attachment; filename="${file.originalName}"`);

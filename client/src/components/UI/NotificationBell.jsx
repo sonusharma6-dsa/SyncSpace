@@ -31,14 +31,18 @@ const NotificationBell = () => {
     try {
       await axios.put(`/api/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
-    } catch (_) {}
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+    }
   };
 
   const markAllRead = async () => {
     try {
       await axios.put('/api/notifications/read-all');
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    } catch (_) {}
+    } catch (err) {
+      console.error('Failed to mark all notifications as read:', err);
+    }
   };
 
   return (
