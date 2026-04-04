@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SyncSpace — Screenshot Gallery</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#111;color:#fff;min-height:100vh}
+  header{background:linear-gradient(135deg,#7C3AED,#4F46E5);padding:40px;text-align:center}
+  header h1{font-size:40px;font-weight:900;margin-bottom:8px}
+  header p{font-size:16px;opacity:.8}
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(560px,1fr));gap:32px;padding:40px;max-width:1400px;margin:0 auto}
+  .shot{border-radius:16px;overflow:hidden;background:#1a1a1a;border:1px solid #333;transition:transform .2s,box-shadow .2s}
+  .shot:hover{transform:translateY(-4px);box-shadow:0 20px 40px rgba(124,58,237,.3)}
+  .shot img{width:100%;display:block}
+  .shot-info{padding:16px 20px}
+  .shot-num{font-size:11px;font-weight:700;color:#7C3AED;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+  .shot-title{font-size:17px;font-weight:700;margin-bottom:6px}
+  .shot-desc{font-size:13px;color:#9CA3AF;line-height:1.5}
+  .tag{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;margin:2px;background:rgba(124,58,237,.2);color:#A78BFA;border:1px solid rgba(124,58,237,.3)}
+</style>
+</head>
+<body>
+<header>
+  <div style="font-size:52px;margin-bottom:12px">🚀</div>
+  <h1>SyncSpace</h1>
+  <p>Real-time collaborative workspace — Screenshot Gallery</p>
+</header>
+<div class="gallery">
+
+  <div class="shot">
+    <img src="screenshots/01-login.png" alt="Login Page"/>
+    <div class="shot-info">
+      <div class="shot-num">Screen 01</div>
+      <div class="shot-title">Login Page</div>
+      <div class="shot-desc">Purple gradient login screen with email/password form, SyncSpace branding, and link to sign-up. JWT stored as HttpOnly cookie on success.</div>
+      <div style="margin-top:8px">
+        <span class="tag">JWT Auth</span>
+        <span class="tag">HttpOnly Cookie</span>
+        <span class="tag">Rate Limited</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <img src="screenshots/02-signup.png" alt="Sign Up Page"/>
+    <div class="shot-info">
+      <div class="shot-num">Screen 02</div>
+      <div class="shot-title">Sign Up Page</div>
+      <div class="shot-desc">Create a new account with full name, email, and password (min 6 chars). Password is bcrypt-hashed with 12 rounds before storage.</div>
+      <div style="margin-top:8px">
+        <span class="tag">bcrypt 12 rounds</span>
+        <span class="tag">Input Validation</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <img src="screenshots/03-dashboard.png" alt="Dashboard"/>
+    <div class="shot-info">
+      <div class="shot-num">Screen 03</div>
+      <div class="shot-title">Dashboard</div>
+      <div class="shot-desc">View all your workspaces as cards with name, member count, and invite code. Create new workspaces or join existing ones with a 6-character invite code.</div>
+      <div style="margin-top:8px">
+        <span class="tag">Create Workspace</span>
+        <span class="tag">Join by Code</span>
+        <span class="tag">Workspace Cards</span>
+        <span class="tag">Online Status</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <img src="screenshots/04-workspace.png" alt="Workspace — Main View"/>
+    <div class="shot-info">
+      <div class="shot-num">Screen 04</div>
+      <div class="shot-title">Workspace — Main 3-Panel View</div>
+      <div class="shot-desc">The core workspace layout: left sidebar (documents, files, members), centre document editor with live cursor presence, and right Kanban board with drag-and-drop. Shows member avatars, notification bell with badge, and online status in the top bar.</div>
+      <div style="margin-top:8px">
+        <span class="tag">Live Editing</span>
+        <span class="tag">Cursor Presence</span>
+        <span class="tag">Kanban Board</span>
+        <span class="tag">Drag &amp; Drop</span>
+        <span class="tag">File List</span>
+        <span class="tag">Members</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <img src="screenshots/05-notifications.png" alt="Notification Bell &amp; Dropdown"/>
+    <div class="shot-info">
+      <div class="shot-num">Screen 05</div>
+      <div class="shot-title">Real-time Notifications</div>
+      <div class="shot-desc">🔔 bell icon with red unread-count badge opens a dropdown listing recent notifications. Unread items highlighted purple. Types: file_uploaded, task_created, task_updated, user_joined. Delivered instantly via Socket.IO to a personal <code style="background:#1F2937;padding:1px 5px;border-radius:3px">user:{id}</code> room.</div>
+      <div style="margin-top:8px">
+        <span class="tag">Socket.IO Push</span>
+        <span class="tag">4 Event Types</span>
+        <span class="tag">Mark as Read</span>
+        <span class="tag">Persisted MongoDB</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <img src="screenshots/06-file-upload.png" alt="File Upload &amp; Sharing"/>
+    <div class="shot-info">
+      <div class="shot-num">Screen 06</div>
+      <div class="shot-title">File Upload &amp; Sharing</div>
+      <div class="shot-desc">Upload files up to 10 MB (images, PDF, Office docs, CSV, ZIP). File list in sidebar shows type icon, size, and uploader. Download and delete buttons per file. Upload broadcasts a <code style="background:#1F2937;padding:1px 5px;border-radius:3px">file:uploaded</code> event to all members and sends notifications.</div>
+      <div style="margin-top:8px">
+        <span class="tag">Multer v2</span>
+        <span class="tag">MIME Allowlist</span>
+        <span class="tag">10 MB Limit</span>
+        <span class="tag">Auth-gated Download</span>
+        <span class="tag">Path Traversal Safe</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="shot">
+    <img src="screenshots/07-offline.png" alt="Offline / PWA Mode"/>
+    <div class="shot-info">
+      <div class="shot-num">Screen 07</div>
+      <div class="shot-title">Offline / PWA Mode</div>
+      <div class="shot-desc">When network drops, a yellow banner appears and the status badge turns red. All document edits and task moves are queued in IndexedDB. When connection returns, the sync queue flushes automatically. Service Worker caches static assets for instant load.</div>
+      <div style="margin-top:8px">
+        <span class="tag">Service Worker</span>
+        <span class="tag">IndexedDB Queue</span>
+        <span class="tag">Auto Sync</span>
+        <span class="tag">Offline Banner</span>
+        <span class="tag">PWA</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
