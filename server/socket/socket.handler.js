@@ -1,7 +1,14 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User.model');
+const Workspace = require('../models/Workspace.model');
 
 const connectedUsers = new Map();
+
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET environment variable is not set');
+  return secret;
+};
 
 const setupSocketHandlers = (io) => {
   io.use(async (socket, next) => {
@@ -12,7 +19,7 @@ const setupSocketHandlers = (io) => {
         return match ? match[1] : undefined;
       })();
       if (!token) return next(new Error('Authentication error'));
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+      const decoded = jwt.verify(token, getJwtSecret());
       socket.userId = decoded.id;
       const user = await User.findById(decoded.id).select('name email');
       if (!user) return next(new Error('User not found'));
@@ -26,23 +33,27 @@ const setupSocketHandlers = (io) => {
   io.on('connection', (socket) => {
     console.log(`User connected: ${socket.user.name} (${socket.id})`);
 
-    socket.on('join:workspace', ({ workspaceId }) => {
+    socket.on('join:workspace', async ({ workspaceId }) => {
+      const workspace = await Workspace.findById(workspaceId);
+      if (!workspace) return;
+      const isMember = workspace.members.some(m => m.user.toString() === socket.userId.toString());
+      if (!isMember) return;
       socket.join(workspaceId);
       connectedUsers.set(socket.id, { userId: socket.userId, name: socket.user.name, workspaceId });
       socket.to(workspaceId).emit('user:joined', { userId: socket.userId, name: socket.user.name });
       console.log(`${socket.user.name} joined workspace ${workspaceId}`);
     });
 
-    socket.on('document:edit', ({ docId, content, userId, workspaceId, timestamp }) => {
-      socket.to(workspaceId).emit('document:updated', { docId, content, editedBy: userId, timestamp });
+    socket.on('document:edit', ({ docId, content, workspaceId, timestamp }) => {
+      socket.to(workspaceId).emit('document:updated', { docId, content, editedBy: socket.userId, timestamp });
     });
 
     socket.on('task:update', ({ taskId, status, workspaceId, task }) => {
       socket.to(workspaceId).emit('task:updated', { taskId, newStatus: status, updatedBy: socket.userId, task });
     });
 
-    socket.on('cursor:move', ({ docId, position, userId, workspaceId, name }) => {
-      socket.to(workspaceId).emit('cursor:updated', { userId, position, name });
+    socket.on('cursor:move', ({ docId, position, workspaceId }) => {
+      socket.to(workspaceId).emit('cursor:updated', { userId: socket.userId, position, name: socket.user.name });
     });
 
     socket.on('disconnect', () => {

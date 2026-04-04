@@ -1,14 +1,26 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User.model');
 
+const getSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET environment variable is not set');
+  return secret;
+};
+
+const getRefreshSecret = () => {
+  const secret = process.env.JWT_REFRESH_SECRET;
+  if (!secret) throw new Error('JWT_REFRESH_SECRET environment variable is not set');
+  return secret;
+};
+
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret', {
+  return jwt.sign({ id }, getSecret(), {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   });
 };
 
 const generateRefreshToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret', {
+  return jwt.sign({ id }, getRefreshSecret(), {
     expiresIn: '30d',
   });
 };
@@ -89,7 +101,7 @@ exports.refresh = async (req, res, next) => {
     if (!refreshToken) {
       return res.status(401).json({ message: 'No refresh token' });
     }
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret');
+    const decoded = jwt.verify(refreshToken, getRefreshSecret());
     const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(401).json({ message: 'User not found' });

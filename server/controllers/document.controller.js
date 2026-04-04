@@ -62,7 +62,7 @@ exports.updateDocument = async (req, res, next) => {
     if (!document) return res.status(404).json({ message: 'Document not found' });
     const { title, content } = req.body;
     if (content !== undefined) {
-      document.history.push({ content: document.content, editedBy: document.lastEditedBy, timestamp: new Date() });
+      document.history.push({ content: document.content, editedBy: document.lastEditedBy || req.user._id, timestamp: new Date() });
       if (document.history.length > MAX_HISTORY_LENGTH) document.history = document.history.slice(-MAX_HISTORY_LENGTH);
       document.content = content;
       document.version += 1;
