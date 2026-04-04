@@ -7,12 +7,6 @@ const getSecret = () => {
   return secret;
 };
 
-const getRefreshSecret = () => {
-  const secret = process.env.JWT_REFRESH_SECRET;
-  if (!secret) throw new Error('JWT_REFRESH_SECRET environment variable is not set');
-  return secret;
-};
-
 const protect = async (req, res, next) => {
   try {
     const token = req.cookies.token || (req.headers.authorization && req.headers.authorization.split(' ')[1]);

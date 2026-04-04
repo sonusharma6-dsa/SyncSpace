@@ -6,6 +6,9 @@ import { saveDocEdit, cacheDoc, getCachedDoc } from '../../utils/indexedDB';
 import CursorPresence from './CursorPresence';
 import ConflictModal from '../UI/ConflictModal';
 
+const CONFLICT_WINDOW_MS = 2000;
+const AUTOSAVE_DELAY_MS = 500;
+
 const DocumentEditor = ({ document, workspaceId, socket, userId }) => {
   const [content, setContent] = useState(document?.content || '');
   const [title, setTitle] = useState(document?.title || 'Untitled');
@@ -31,7 +34,7 @@ const DocumentEditor = ({ document, workspaceId, socket, userId }) => {
     const onDocUpdate = ({ docId, content: newContent, editedBy, timestamp }) => {
       if (docId !== document._id || editedBy === userId) return;
       const timeDiff = Math.abs(Date.now() - (timestamp || 0));
-      if (timeDiff < 2000 && content !== lastRemoteContent.current) {
+      if (timeDiff < CONFLICT_WINDOW_MS && content !== lastRemoteContent.current) {
         setConflict({ remote: newContent, local: content, timestamp });
       } else {
         setContent(newContent);
@@ -64,7 +67,7 @@ const DocumentEditor = ({ document, workspaceId, socket, userId }) => {
     }
   }, [document, workspaceId]);
 
-  const debouncedSave = useDebounce(saveToServer, 500);
+  const debouncedSave = useDebounce(saveToServer, AUTOSAVE_DELAY_MS);
 
   const handleContentChange = (e) => {
     const newContent = e.target.value;

@@ -1,6 +1,8 @@
 import { useCallback, useRef } from 'react';
 
-export const useDebounce = (fn, delay = 500) => {
+const DEFAULT_DEBOUNCE_DELAY = 500;
+
+export const useDebounce = (fn, delay = DEFAULT_DEBOUNCE_DELAY) => {
   const timerRef = useRef(null);
   return useCallback((...args) => {
     if (timerRef.current) clearTimeout(timerRef.current);

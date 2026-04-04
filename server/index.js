@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth.routes');
@@ -16,20 +17,42 @@ const { errorHandler } = require('./middleware/error.middleware');
 const app = express();
 const server = http.createServer(app);
 
+const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:3000';
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: allowedOrigin,
     credentials: true,
   },
 });
 
+// General API rate limiter
+const generalLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: allowedOrigin,
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
+app.use('/api/', generalLimiter);
+
+// CSRF protection: verify that state-changing requests include the correct Origin/Referer header
+app.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+    const origin = req.headers.origin || req.headers.referer;
+    if (origin && !origin.startsWith(allowedOrigin)) {
+      return res.status(403).json({ message: 'CSRF check failed' });
+    }
+  }
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);

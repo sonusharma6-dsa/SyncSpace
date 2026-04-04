@@ -35,9 +35,15 @@ const setupSocketHandlers = (io) => {
 
     socket.on('join:workspace', async ({ workspaceId }) => {
       const workspace = await Workspace.findById(workspaceId);
-      if (!workspace) return;
+      if (!workspace) {
+        socket.emit('error', { message: 'Workspace not found' });
+        return;
+      }
       const isMember = workspace.members.some(m => m.user.toString() === socket.userId.toString());
-      if (!isMember) return;
+      if (!isMember) {
+        socket.emit('error', { message: 'Access denied' });
+        return;
+      }
       socket.join(workspaceId);
       connectedUsers.set(socket.id, { userId: socket.userId, name: socket.user.name, workspaceId });
       socket.to(workspaceId).emit('user:joined', { userId: socket.userId, name: socket.user.name });

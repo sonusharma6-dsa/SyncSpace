@@ -47,11 +47,15 @@ exports.signup = async (req, res, next) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'All fields are required' });
     }
-    const existingUser = await User.findOne({ email });
+    if (typeof email !== 'string' || typeof password !== 'string' || typeof name !== 'string') {
+      return res.status(400).json({ message: 'Invalid input types' });
+    }
+    const sanitizedEmail = email.toLowerCase().trim();
+    const existingUser = await User.findOne({ email: sanitizedEmail });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
     }
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name: name.trim(), email: sanitizedEmail, password });
     const token = generateToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
     setCookies(res, token, refreshToken);
@@ -67,7 +71,11 @@ exports.login = async (req, res, next) => {
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password required' });
     }
-    const user = await User.findOne({ email });
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ message: 'Invalid input types' });
+    }
+    const sanitizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: sanitizedEmail });
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }

@@ -2,6 +2,8 @@ import axios from 'axios';
 import { getPendingEdits, markEditSynced, getPendingTasks, markTaskSynced } from './indexedDB';
 import { getSocket } from '../hooks/useSocket';
 
+const CONFLICT_WINDOW_MS = 2000;
+
 export const syncPendingEdits = async (workspaceId) => {
   try {
     const pendingEdits = await getPendingEdits();
@@ -14,8 +16,8 @@ export const syncPendingEdits = async (workspaceId) => {
       try {
         const docId = edit.docId.slice(prefix.length);
         
-        // Check for conflicts (if two edits within 2 seconds)
-        const similar = filtered.filter(e => e.docId === edit.docId && Math.abs(e.timestamp - edit.timestamp) < 2000 && e.id !== edit.id);
+        // Check for conflicts (if two edits within CONFLICT_WINDOW_MS)
+        const similar = filtered.filter(e => e.docId === edit.docId && Math.abs(e.timestamp - edit.timestamp) < CONFLICT_WINDOW_MS && e.id !== edit.id);
         if (similar.length > 0) {
           // Conflict detected - last write wins by default
           const latest = [...similar, edit].sort((a, b) => b.timestamp - a.timestamp)[0];
