@@ -8,6 +8,8 @@ export const WorkspaceProvider = ({ children }) => {
   const [documents, setDocuments] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [activeDocument, setActiveDocument] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
   return (
     <WorkspaceContext.Provider value={{
@@ -16,6 +18,8 @@ export const WorkspaceProvider = ({ children }) => {
       documents, setDocuments,
       tasks, setTasks,
       activeDocument, setActiveDocument,
+      files, setFiles,
+      notifications, setNotifications,
     }}>
       {children}
     </WorkspaceContext.Provider>

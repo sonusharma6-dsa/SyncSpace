@@ -1,5 +1,6 @@
 const Task = require('../models/Task.model');
 const Workspace = require('../models/Workspace.model');
+const Notification = require('../models/Notification.model');
 
 const checkAccess = async (workspaceId, userId) => {
   const workspace = await Workspace.findById(workspaceId);
@@ -28,6 +29,30 @@ exports.createTask = async (req, res, next) => {
       { path: 'assignee', select: 'name email' },
       { path: 'createdBy', select: 'name email' },
     ]);
+
+    // Notify other members
+    try {
+      const { io } = require('../index');
+      const workspace = access.workspace;
+      const others = workspace.members.filter(m => m.user.toString() !== req.user._id.toString());
+      if (io && others.length > 0) {
+        const notifs = await Notification.insertMany(
+          others.map(m => ({
+            user: m.user,
+            workspace: req.params.id,
+            type: 'task_created',
+            message: `${req.user.name} created task "${title}"`,
+          }))
+        );
+        notifs.forEach(n => {
+          io.to(`user:${n.user.toString()}`).emit('notification:new', {
+            _id: n._id, type: n.type, message: n.message,
+            workspace: req.params.id, read: false, createdAt: n.createdAt,
+          });
+        });
+      }
+    } catch (_) {}
+
     res.status(201).json({ task: populated });
   } catch (err) {
     next(err);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import InviteModal from './InviteModal';
+import FileList from './FileList';
 import axios from 'axios';
 
 const Sidebar = ({ workspaceId }) => {
@@ -48,6 +49,10 @@ const Sidebar = ({ workspaceId }) => {
           </div>
         ))}
         {documents.length === 0 && <div style={{ fontSize: '12px', color: '#9CA3AF', padding: '4px 10px' }}>No documents yet</div>}
+      </div>
+
+      <div style={{ borderTop: '1px solid #E5E7EB' }}>
+        <FileList workspaceId={workspaceId} />
       </div>
 
       <div style={{ padding: '12px', borderTop: '1px solid #E5E7EB' }}>

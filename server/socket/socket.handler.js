@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User.model');
 const Workspace = require('../models/Workspace.model');
+const Notification = require('../models/Notification.model');
 
 const connectedUsers = new Map();
 
@@ -8,6 +9,31 @@ const getJwtSecret = () => {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error('JWT_SECRET environment variable is not set');
   return secret;
+};
+
+const createAndEmitNotifications = async (io, workspaceId, excludeUserId, type, message) => {
+  try {
+    const workspace = await Workspace.findById(workspaceId).select('members');
+    if (!workspace) return;
+    const recipients = workspace.members.filter(
+      m => m.user.toString() !== excludeUserId.toString()
+    );
+    if (recipients.length === 0) return;
+    const docs = recipients.map(m => ({ user: m.user, workspace: workspaceId, type, message }));
+    const created = await Notification.insertMany(docs);
+    created.forEach(notif => {
+      io.to(`user:${notif.user.toString()}`).emit('notification:new', {
+        _id: notif._id,
+        type: notif.type,
+        message: notif.message,
+        workspace: workspaceId,
+        read: false,
+        createdAt: notif.createdAt,
+      });
+    });
+  } catch (err) {
+    console.error('Failed to create notifications:', err.message);
+  }
 };
 
 const setupSocketHandlers = (io) => {
@@ -33,6 +59,9 @@ const setupSocketHandlers = (io) => {
   io.on('connection', (socket) => {
     console.log(`User connected: ${socket.user.name} (${socket.id})`);
 
+    // Join personal notification room
+    socket.join(`user:${socket.userId}`);
+
     socket.on('join:workspace', async ({ workspaceId }) => {
       const workspace = await Workspace.findById(workspaceId);
       if (!workspace) {
@@ -48,6 +77,13 @@ const setupSocketHandlers = (io) => {
       connectedUsers.set(socket.id, { userId: socket.userId, name: socket.user.name, workspaceId });
       socket.to(workspaceId).emit('user:joined', { userId: socket.userId, name: socket.user.name });
       console.log(`${socket.user.name} joined workspace ${workspaceId}`);
+
+      // Notify other members
+      await createAndEmitNotifications(
+        io, workspaceId, socket.userId,
+        'user_joined',
+        `${socket.user.name} joined the workspace`
+      );
     });
 
     socket.on('document:edit', ({ docId, content, workspaceId, timestamp }) => {

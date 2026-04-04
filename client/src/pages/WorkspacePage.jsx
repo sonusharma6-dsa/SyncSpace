@@ -9,13 +9,21 @@ import Sidebar from '../components/Workspace/Sidebar';
 import DocumentEditor from '../components/Editor/DocumentEditor';
 import KanbanBoard from '../components/Tasks/KanbanBoard';
 import StatusBadge from '../components/UI/StatusBadge';
+import NotificationBell from '../components/UI/NotificationBell';
 import { syncPendingEdits, syncPendingTasks } from '../utils/syncQueue';
 
 const WorkspacePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { currentWorkspace, setCurrentWorkspace, documents, setDocuments, tasks, setTasks, activeDocument, setActiveDocument } = useWorkspace();
+  const {
+    currentWorkspace, setCurrentWorkspace,
+    documents, setDocuments,
+    tasks, setTasks,
+    activeDocument, setActiveDocument,
+    files, setFiles,
+    notifications, setNotifications,
+  } = useWorkspace();
   const socket = useSocket(user?._id);
   const isOffline = useOffline();
   const [activeTab, setActiveTab] = useState('editor');
@@ -35,30 +43,50 @@ const WorkspacePage = () => {
   useEffect(() => {
     if (!socket || !id) return;
     socket.emit('join:workspace', { workspaceId: id });
+
     const onUserJoined = ({ userId, name }) => {
       setOnlineUsers(prev => prev.includes(userId) ? prev : [...prev, userId]);
     };
     const onUserLeft = ({ userId }) => {
       setOnlineUsers(prev => prev.filter(uid => uid !== userId));
     };
+    const onFileUploaded = ({ file }) => {
+      setFiles(prev => {
+        const exists = prev.some(f => f._id === file._id);
+        return exists ? prev : [file, ...prev];
+      });
+    };
+    const onNotification = (notif) => {
+      setNotifications(prev => [notif, ...prev]);
+    };
+
     socket.on('user:joined', onUserJoined);
     socket.on('user:left', onUserLeft);
+    socket.on('file:uploaded', onFileUploaded);
+    socket.on('notification:new', onNotification);
+
     return () => {
       socket.off('user:joined', onUserJoined);
       socket.off('user:left', onUserLeft);
+      socket.off('file:uploaded', onFileUploaded);
+      socket.off('notification:new', onNotification);
     };
   }, [socket, id]);
 
   const loadWorkspace = async () => {
     try {
-      const [wsRes, docsRes, tasksRes] = await Promise.all([
+      const [wsRes, docsRes, tasksRes, filesRes, notifsRes] = await Promise.all([
         axios.get(`/api/workspaces/${id}`),
         axios.get(`/api/workspaces/${id}/documents`),
         axios.get(`/api/workspaces/${id}/tasks`),
+        axios.get(`/api/workspaces/${id}/files`),
+        axios.get('/api/notifications'),
       ]);
       setCurrentWorkspace(wsRes.data.workspace);
       setDocuments(docsRes.data.documents);
       setTasks(tasksRes.data.tasks);
+      setFiles(filesRes.data.files);
+      setNotifications(notifsRes.data.notifications);
       if (docsRes.data.documents.length > 0) setActiveDocument(docsRes.data.documents[0]);
     } catch (err) {
       console.error(err);
@@ -84,6 +112,7 @@ const WorkspacePage = () => {
               </div>
             ))}
           </div>
+          <NotificationBell />
           <StatusBadge online={!isOffline} />
           <button onClick={handleLogout} style={{ padding: '5px 12px', background: '#F3F4F6', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>Logout</button>
         </div>

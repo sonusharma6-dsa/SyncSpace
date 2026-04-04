@@ -10,6 +10,7 @@ const workspaceSchema = new mongoose.Schema({
   }],
   documents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Document' }],
   tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Task' }],
+  files: [{ type: mongoose.Schema.Types.ObjectId, ref: 'File' }],
   createdAt: { type: Date, default: Date.now },
 });
 

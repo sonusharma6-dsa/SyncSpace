@@ -11,6 +11,8 @@ const authRoutes = require('./routes/auth.routes');
 const workspaceRoutes = require('./routes/workspace.routes');
 const documentRoutes = require('./routes/document.routes');
 const taskRoutes = require('./routes/task.routes');
+const fileRoutes = require('./routes/file.routes');
+const notificationRoutes = require('./routes/notification.routes');
 const { setupSocketHandlers } = require('./socket/socket.handler');
 const { errorHandler } = require('./middleware/error.middleware');
 
@@ -59,6 +61,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/workspaces', documentRoutes);
 app.use('/api/workspaces', taskRoutes);
+app.use('/api/workspaces', fileRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
