@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SyncSpace — Project Presentation</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --purple:#7C3AED;--indigo:#4F46E5;--green:#10B981;--amber:#F59E0B;
+    --red:#EF4444;--gray:#6B7280;--light:#F9FAFB;--white:#fff;
+    --dark:#1F2937;--border:#E5E7EB;
+  }
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#111;overflow:hidden;height:100vh}
+
+  /* ── Slide container ── */
+  #deck{width:100vw;height:100vh;position:relative}
+  .slide{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    padding:60px 80px;opacity:0;pointer-events:none;
+    transition:opacity .35s ease;
+  }
+  .slide.active{opacity:1;pointer-events:all}
+
+  /* ── Slide themes ── */
+  .theme-hero{background:linear-gradient(135deg,#7C3AED 0%,#4F46E5 100%);color:#fff}
+  .theme-light{background:#F9FAFB;color:#1F2937}
+  .theme-dark{background:#1F2937;color:#F9FAFB}
+  .theme-purple{background:#EDE9FE;color:#1F2937}
+  .theme-green{background:#D1FAE5;color:#1F2937}
+  .theme-amber{background:#FEF3C7;color:#1F2937}
+
+  /* ── Typography ── */
+  .slide-title{font-size:clamp(26px,4vw,52px);font-weight:900;line-height:1.1;text-align:center;margin-bottom:24px}
+  .slide-subtitle{font-size:clamp(14px,2vw,22px);opacity:.85;text-align:center;max-width:700px;line-height:1.6}
+  .section-label{font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;opacity:.6;margin-bottom:16px;text-align:center}
+  h3{font-size:clamp(16px,2.2vw,26px);font-weight:800;margin-bottom:12px}
+
+  /* ── Grid layouts ── */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:100%;max-width:1000px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;max-width:1100px}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;width:100%;max-width:1100px}
+
+  /* ── Cards ── */
+  .card{
+    background:rgba(255,255,255,.12);border-radius:16px;padding:24px;
+    border:1px solid rgba(255,255,255,.18);
+  }
+  .card.white{background:#fff;border-color:#E5E7EB;box-shadow:0 4px 16px rgba(0,0,0,.06)}
+  .card.white h3{color:#7C3AED}
+  .card-icon{font-size:36px;margin-bottom:12px}
+  .card p{font-size:14px;line-height:1.6;opacity:.8}
+  .card ul{font-size:13px;line-height:1.8;opacity:.85;padding-left:16px}
+
+  /* ── Tech badge ── */
+  .badge{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:6px 14px;border-radius:9999px;font-size:13px;font-weight:600;
+    border:1px solid;margin:4px;
+  }
+  .badge-purple{background:#EDE9FE;color:#7C3AED;border-color:#DDD6FE}
+  .badge-green{background:#D1FAE5;color:#059669;border-color:#A7F3D0}
+  .badge-amber{background:#FEF3C7;color:#D97706;border-color:#FDE68A}
+  .badge-blue{background:#DBEAFE;color:#1D4ED8;border-color:#BFDBFE}
+  .badge-red{background:#FEE2E2;color:#DC2626;border-color:#FECACA}
+
+  /* ── Code block ── */
+  pre{
+    background:#111;color:#a5f3fc;padding:20px 24px;border-radius:12px;
+    font-size:12px;line-height:1.7;overflow:auto;text-align:left;
+    width:100%;max-width:700px;
+  }
+
+  /* ── Diagram boxes ── */
+  .arch-box{
+    background:rgba(124,58,237,.15);border:2px solid rgba(124,58,237,.4);
+    border-radius:10px;padding:16px 24px;text-align:center;font-size:14px;font-weight:600;
+  }
+  .arch-arrow{font-size:24px;display:flex;align-items:center;justify-content:center;color:#7C3AED}
+
+  /* ── Feature list ── */
+  .feat-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+  .feat-icon{font-size:22px;flex-shrink:0;margin-top:2px}
+  .feat-text h4{font-size:15px;font-weight:700;margin-bottom:2px}
+  .feat-text p{font-size:13px;opacity:.75;line-height:1.5}
+
+  /* ── Flow steps ── */
+  .flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;justify-content:center;width:100%;max-width:900px}
+  .flow-step{
+    background:#fff;border-radius:12px;padding:16px 20px;
+    text-align:center;font-size:13px;font-weight:600;color:#1F2937;
+    min-width:130px;box-shadow:0 2px 8px rgba(0,0,0,.08);
+  }
+  .flow-step span{font-size:24px;display:block;margin-bottom:6px}
+  .flow-arrow{font-size:20px;color:#7C3AED;margin:0 8px}
+
+  /* ── Table ── */
+  table{border-collapse:collapse;width:100%;max-width:860px;font-size:13px}
+  th{background:#7C3AED;color:#fff;padding:10px 14px;text-align:left;font-weight:700}
+  td{padding:9px 14px;border-bottom:1px solid #E5E7EB;vertical-align:top}
+  tr:nth-child(even) td{background:#F5F3FF}
+
+  /* ── Navigation ── */
+  #nav{
+    position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+    display:flex;align-items:center;gap:12px;
+    background:rgba(0,0,0,.7);backdrop-filter:blur(8px);
+    padding:10px 20px;border-radius:50px;border:1px solid rgba(255,255,255,.15);
+    z-index:100;
+  }
+  #nav button{
+    width:36px;height:36px;border-radius:50%;border:none;
+    background:rgba(255,255,255,.15);color:#fff;font-size:16px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:background .2s;
+  }
+  #nav button:hover{background:rgba(124,58,237,.7)}
+  #nav button:disabled{opacity:.3;cursor:not-allowed}
+  #counter{color:#fff;font-size:13px;font-weight:600;min-width:60px;text-align:center}
+  .dot-row{display:flex;gap:6px}
+  .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;transition:background .2s}
+  .dot.on{background:#7C3AED}
+
+  /* ── Mock UI screenshots ── */
+  .mockup{
+    background:#fff;border-radius:14px;overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.25);
+    width:100%;max-width:700px;
+  }
+  .mock-titlebar{
+    background:#F3F4F6;border-bottom:1px solid #E5E7EB;
+    padding:10px 16px;display:flex;align-items:center;gap:8px;
+  }
+  .mock-dot{width:11px;height:11px;border-radius:50%}
+  .mock-header{
+    background:#fff;border-bottom:1px solid #E5E7EB;
+    padding:10px 20px;display:flex;align-items:center;gap:12px;font-size:13px;
+  }
+  .mock-logo{font-weight:900;color:#7C3AED;font-size:15px}
+  .mock-body{display:flex;height:260px}
+  .mock-sidebar{
+    width:180px;background:#F9FAFB;border-right:1px solid #E5E7EB;
+    padding:12px;font-size:11px;color:#6B7280;flex-shrink:0;
+  }
+  .mock-main{flex:1;padding:12px;font-size:12px;overflow:hidden}
+  .mock-tag{
+    display:inline-block;padding:2px 8px;border-radius:4px;
+    font-size:10px;font-weight:600;background:#EDE9FE;color:#7C3AED;
+    font-family:monospace;margin-bottom:6px;
+  }
+  .mock-doc-line{
+    height:9px;background:#E5E7EB;border-radius:4px;margin-bottom:6px;
+  }
+  .kanban-col{
+    flex:1;background:#F9FAFB;border-radius:8px;padding:8px;margin-right:8px;font-size:10px;
+  }
+  .kanban-card{
+    background:#fff;border-radius:6px;padding:6px 8px;margin-bottom:4px;
+    border:1px solid #E5E7EB;font-size:10px;color:#374151;
+  }
+  .col-header{font-weight:700;margin-bottom:6px;font-size:10px;color:#1F2937}
+
+  /* Responsive */
+  @media(max-width:700px){
+    .slide{padding:30px 20px}
+    .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+    .flow{flex-direction:column}
+    .flow-arrow{transform:rotate(90deg)}
+    table{font-size:11px}
+  }
+</style>
+</head>
+<body>
+<div id="deck">
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 1 — Hero / Title
+════════════════════════════════════════════════ -->
+<div class="slide theme-hero active" id="s1">
+  <div style="font-size:72px;margin-bottom:16px">🚀</div>
+  <div class="slide-title">SyncSpace</div>
+  <div class="slide-subtitle">
+    A real-time collaborative workspace platform for teams.<br/>
+    Documents · Kanban · Files · Notifications — all in sync.
+  </div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:36px">
+    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">⚛️ React 18</span>
+    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">🟢 Node.js</span>
+    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">🍃 MongoDB</span>
+    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">⚡ Socket.IO</span>
+    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">📱 PWA</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 2 — Problem Statement
+════════════════════════════════════════════════ -->
+<div class="slide theme-dark" id="s2">
+  <div class="section-label" style="color:#A78BFA">The Problem</div>
+  <div class="slide-title">Teams need one place<br/>to work together</div>
+  <div class="grid-3" style="margin-top:32px">
+    <div class="card">
+      <div class="card-icon">📧</div>
+      <h3>Scattered Tools</h3>
+      <p>Documents in email, tasks in chat, files on drives — nothing connected.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">⏳</div>
+      <h3>No Real-time Sync</h3>
+      <p>Editing the same file causes conflicts and version confusion.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔇</div>
+      <h3>Silent Changes</h3>
+      <p>No way to know when a teammate uploads a file or moves a task.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 3 — Solution
+════════════════════════════════════════════════ -->
+<div class="slide theme-hero" id="s3">
+  <div class="section-label" style="color:rgba(255,255,255,.7)">The Solution</div>
+  <div class="slide-title">SyncSpace unifies<br/>your team's workflow</div>
+  <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-top:32px;max-width:900px">
+    <div class="card" style="flex:1;min-width:180px;max-width:200px">
+      <div class="card-icon">📄</div>
+      <h3 style="color:#fff">Live Docs</h3>
+      <p style="color:rgba(255,255,255,.8)">Co-edit in real time with cursor presence</p>
+    </div>
+    <div class="card" style="flex:1;min-width:180px;max-width:200px">
+      <div class="card-icon">📋</div>
+      <h3 style="color:#fff">Kanban Board</h3>
+      <p style="color:rgba(255,255,255,.8)">Drag-and-drop tasks synced across all members</p>
+    </div>
+    <div class="card" style="flex:1;min-width:180px;max-width:200px">
+      <div class="card-icon">📎</div>
+      <h3 style="color:#fff">File Sharing</h3>
+      <p style="color:rgba(255,255,255,.8)">Upload, download, manage shared files</p>
+    </div>
+    <div class="card" style="flex:1;min-width:180px;max-width:200px">
+      <div class="card-icon">🔔</div>
+      <h3 style="color:#fff">Notifications</h3>
+      <p style="color:rgba(255,255,255,.8)">Real-time alerts for all workspace activity</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 4 — Tech Stack
+════════════════════════════════════════════════ -->
+<div class="slide theme-light" id="s4">
+  <div class="section-label">Technology Stack</div>
+  <div class="slide-title" style="color:#7C3AED">Built on the MERN Stack</div>
+  <div class="grid-4" style="margin-top:28px">
+    <div class="card white" style="text-align:center">
+      <div class="card-icon">🍃</div>
+      <h3>MongoDB</h3>
+      <p>NoSQL database. 6 collections: Users, Workspaces, Documents, Tasks, Files, Notifications</p>
+    </div>
+    <div class="card white" style="text-align:center">
+      <div class="card-icon">⚡</div>
+      <h3>Express.js</h3>
+      <p>REST API, JWT auth middleware, rate limiting, CSRF protection, Multer file handling</p>
+    </div>
+    <div class="card white" style="text-align:center">
+      <div class="card-icon">⚛️</div>
+      <h3>React 18</h3>
+      <p>Context API, custom hooks, React Router v6, functional components, offline PWA</p>
+    </div>
+    <div class="card white" style="text-align:center">
+      <div class="card-icon">🟢</div>
+      <h3>Node.js</h3>
+      <p>Server runtime + Socket.IO v4 for bi-directional real-time communication</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 5 — Architecture
+════════════════════════════════════════════════ -->
+<div class="slide theme-purple" id="s5">
+  <div class="section-label">System Design</div>
+  <div class="slide-title" style="color:#7C3AED;font-size:clamp(22px,3vw,40px)">Architecture Overview</div>
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:20px;width:100%;max-width:1000px">
+    <div style="text-align:center">
+      <div class="arch-box" style="width:200px">
+        <div style="font-size:28px">⚛️</div>
+        <div>React Client</div>
+        <div style="font-size:11px;font-weight:400;opacity:.7;margin-top:4px">Pages · Components<br/>Context · Hooks</div>
+      </div>
+      <div style="font-size:11px;margin-top:8px;color:#7C3AED;font-weight:600">IndexedDB + Service Worker</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div style="font-size:11px;color:#7C3AED;font-weight:600">HTTP REST</div>
+      <div class="arch-arrow">⟷</div>
+      <div style="font-size:11px;color:#10B981;font-weight:600">WebSocket</div>
+    </div>
+    <div style="text-align:center">
+      <div class="arch-box" style="width:220px">
+        <div style="font-size:28px">⚡</div>
+        <div>Express + Socket.IO</div>
+        <div style="font-size:11px;font-weight:400;opacity:.7;margin-top:4px">Routes · Controllers<br/>Middleware · Multer</div>
+      </div>
+    </div>
+    <div class="arch-arrow">⟷</div>
+    <div style="text-align:center">
+      <div class="arch-box" style="width:180px">
+        <div style="font-size:28px">🍃</div>
+        <div>MongoDB</div>
+        <div style="font-size:11px;font-weight:400;opacity:.7;margin-top:4px">Mongoose ODM<br/>6 collections</div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;justify-content:center">
+    <span class="badge badge-purple">JWT HttpOnly Cookies</span>
+    <span class="badge badge-green">Socket.IO Rooms</span>
+    <span class="badge badge-amber">Rate Limiting</span>
+    <span class="badge badge-blue">CSRF Protection</span>
+    <span class="badge badge-red">MIME Allowlist</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 6 — Authentication Screen
+════════════════════════════════════════════════ -->
+<div class="slide theme-light" id="s6">
+  <div class="section-label">Feature 1</div>
+  <div class="slide-title" style="color:#7C3AED">Authentication</div>
+  <div class="grid-2" style="margin-top:20px;align-items:start">
+    <div>
+      <!-- Mock Login UI -->
+      <div class="mockup">
+        <div class="mock-titlebar">
+          <div class="mock-dot" style="background:#FF5F57"></div>
+          <div class="mock-dot" style="background:#FFBD2E"></div>
+          <div class="mock-dot" style="background:#28CA41"></div>
+          <div style="flex:1;background:#E5E7EB;border-radius:4px;height:18px;margin-left:12px;font-size:10px;display:flex;align-items:center;padding:0 8px;color:#9CA3AF">localhost:3000/login</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#7C3AED,#4F46E5);padding:40px 24px;text-align:center">
+          <div style="background:#fff;border-radius:14px;padding:28px;max-width:280px;margin:0 auto;box-shadow:0 20px 40px rgba(0,0,0,.2)">
+            <div style="font-size:32px;margin-bottom:8px">🚀</div>
+            <div style="font-weight:900;color:#7C3AED;font-size:20px;margin-bottom:4px">SyncSpace</div>
+            <div style="font-size:11px;color:#9CA3AF;margin-bottom:16px">Sign in to your account</div>
+            <div style="background:#F3F4F6;border-radius:6px;height:30px;margin-bottom:8px"></div>
+            <div style="background:#F3F4F6;border-radius:6px;height:30px;margin-bottom:12px"></div>
+            <div style="background:#7C3AED;border-radius:6px;height:32px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700">Sign In</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:8px 0">
+      <h3 style="color:#7C3AED;margin-bottom:16px">What's included</h3>
+      <div class="feat-row">
+        <div class="feat-icon">🔏</div>
+        <div class="feat-text"><h4>Secure Sign Up / Login</h4><p>bcrypt-hashed passwords (12 rounds), JWT token in HttpOnly cookie</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">🍪</div>
+        <div class="feat-text"><h4>Persistent Sessions</h4><p>7-day JWT token; survives page refresh automatically</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">🛡️</div>
+        <div class="feat-text"><h4>Protected Routes</h4><p>Unauthenticated users redirected to login on every protected page</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">🚦</div>
+        <div class="feat-text"><h4>Rate Limited</h4><p>Auth routes: max 20 requests per 15 minutes</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 7 — Dashboard
+════════════════════════════════════════════════ -->
+<div class="slide theme-light" id="s7">
+  <div class="section-label">Feature 2</div>
+  <div class="slide-title" style="color:#7C3AED">Workspace Dashboard</div>
+  <div class="grid-2" style="margin-top:20px;align-items:start">
+    <div>
+      <div class="mockup">
+        <div class="mock-titlebar">
+          <div class="mock-dot" style="background:#FF5F57"></div>
+          <div class="mock-dot" style="background:#FFBD2E"></div>
+          <div class="mock-dot" style="background:#28CA41"></div>
+          <div style="flex:1;background:#E5E7EB;border-radius:4px;height:18px;margin-left:12px;font-size:10px;display:flex;align-items:center;padding:0 8px;color:#9CA3AF">localhost:3000/dashboard</div>
+        </div>
+        <div class="mock-header">
+          <span style="font-size:16px">🚀</span>
+          <span class="mock-logo">SyncSpace</span>
+          <span style="margin-left:auto;font-size:11px;color:#9CA3AF">👋 John Doe</span>
+        </div>
+        <div style="padding:16px;background:#F9FAFB">
+          <div style="font-size:13px;font-weight:700;color:#1F2937;margin-bottom:12px">Your Workspaces</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div style="background:#fff;border-radius:8px;padding:12px;border:1px solid #E5E7EB;font-size:11px">
+              <div style="font-weight:700;margin-bottom:4px">Create Workspace</div>
+              <div style="background:#F3F4F6;border-radius:4px;height:22px;margin-bottom:6px"></div>
+              <div style="background:#7C3AED;border-radius:4px;height:22px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700">Create</div>
+            </div>
+            <div style="background:#fff;border-radius:8px;padding:12px;border:1px solid #E5E7EB;font-size:11px">
+              <div style="font-weight:700;margin-bottom:4px">Join Workspace</div>
+              <div style="background:#F3F4F6;border-radius:4px;height:22px;margin-bottom:6px;font-family:monospace;display:flex;align-items:center;justify-content:center;color:#7C3AED;font-weight:700;font-size:12px">ABC123</div>
+              <div style="background:#10B981;border-radius:4px;height:22px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700">Join</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div style="background:#fff;border-radius:8px;padding:10px;border:1px solid #E5E7EB;flex:1">
+              <div style="font-size:18px;margin-bottom:4px">🏢</div>
+              <div style="font-size:11px;font-weight:700">Design Team</div>
+              <div style="font-size:10px;color:#9CA3AF">3 members</div>
+              <div class="mock-tag" style="margin-top:4px">XK9PQR</div>
+            </div>
+            <div style="background:#fff;border-radius:8px;padding:10px;border:1px solid #E5E7EB;flex:1">
+              <div style="font-size:18px;margin-bottom:4px">🏢</div>
+              <div style="font-size:11px;font-weight:700">Dev Sprint</div>
+              <div style="font-size:10px;color:#9CA3AF">5 members</div>
+              <div class="mock-tag" style="margin-top:4px">MW2TYU</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:8px 0">
+      <h3 style="color:#7C3AED;margin-bottom:16px">What's included</h3>
+      <div class="feat-row">
+        <div class="feat-icon">➕</div>
+        <div class="feat-text"><h4>Create Workspace</h4><p>Name your workspace; unique 6-character invite code auto-generated</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">🔗</div>
+        <div class="feat-text"><h4>Join by Invite Code</h4><p>Enter a 6-char code; instantly added as an editor member</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">🃏</div>
+        <div class="feat-text"><h4>Workspace Cards</h4><p>Grid view of all workspaces with name, member count, invite code badge</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">👥</div>
+        <div class="feat-text"><h4>Role System</h4><p>owner · editor · viewer — enforced on every API and upload action</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 8 — Workspace (Main layout)
+════════════════════════════════════════════════ -->
+<div class="slide theme-light" id="s8">
+  <div class="section-label">Main Interface</div>
+  <div class="slide-title" style="color:#7C3AED;font-size:clamp(20px,3vw,38px)">The Workspace — 3-Panel Layout</div>
+  <div class="mockup" style="max-width:900px;margin-top:16px">
+    <div class="mock-titlebar">
+      <div class="mock-dot" style="background:#FF5F57"></div>
+      <div class="mock-dot" style="background:#FFBD2E"></div>
+      <div class="mock-dot" style="background:#28CA41"></div>
+      <div style="flex:1;background:#E5E7EB;border-radius:4px;height:18px;margin-left:12px;font-size:10px;display:flex;align-items:center;padding:0 8px;color:#9CA3AF">localhost:3000/workspace/abc123</div>
+    </div>
+    <div class="mock-header" style="justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:14px">🚀</span>
+        <span class="mock-logo">SyncSpace</span>
+        <span style="color:#9CA3AF">›</span>
+        <span style="font-size:12px;font-weight:600">Design Team</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px">
+        <div style="display:flex">
+          <div style="width:20px;height:20px;border-radius:50%;background:#7C3AED;border:2px solid white;display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:700">J</div>
+          <div style="width:20px;height:20px;border-radius:50%;background:#10B981;border:2px solid white;display:flex;align-items:center;justify-content:center;color:white;font-size:9px;font-weight:700;margin-left:-6px">A</div>
+        </div>
+        <span style="font-size:14px;cursor:pointer">🔔</span>
+        <span style="background:#D1FAE5;color:#059669;padding:2px 8px;border-radius:9999px;font-size:10px;font-weight:600">● Online</span>
+        <button style="background:#F3F4F6;border:none;border-radius:4px;padding:3px 8px;font-size:10px;cursor:pointer">Logout</button>
+      </div>
+    </div>
+    <div class="mock-body" style="height:230px">
+      <!-- Sidebar -->
+      <div class="mock-sidebar">
+        <div style="font-weight:800;color:#7C3AED;margin-bottom:2px">Design Team</div>
+        <div style="color:#9CA3AF;margin-bottom:10px;font-size:10px">3 members</div>
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#9CA3AF;margin-bottom:6px">DOCUMENTS</div>
+        <div style="background:#EDE9FE;color:#7C3AED;border-radius:5px;padding:5px 7px;margin-bottom:2px;font-weight:600">📄 Project Brief</div>
+        <div style="padding:5px 7px;margin-bottom:2px;color:#374151">📄 Meeting Notes</div>
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#9CA3AF;margin-top:8px;margin-bottom:6px">FILES</div>
+        <div style="background:#F3F4F6;border-radius:4px;padding:4px 6px;margin-bottom:2px;font-size:9px">🖼️ logo.png · 48 KB</div>
+        <div style="background:#F3F4F6;border-radius:4px;padding:4px 6px;margin-bottom:2px;font-size:9px">📕 brief.pdf · 1.2 MB</div>
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#9CA3AF;margin-top:8px;margin-bottom:6px">MEMBERS</div>
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
+          <div style="width:18px;height:18px;border-radius:50%;background:#7C3AED;color:white;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700">J</div>
+          <span>John · owner</span>
+        </div>
+      </div>
+      <!-- Editor -->
+      <div class="mock-main" style="border-right:1px solid #E5E7EB">
+        <div style="font-size:9px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">📄 DOCUMENT EDITOR</div>
+        <div style="font-size:14px;font-weight:800;color:#1F2937;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+          Project Brief
+          <span style="font-size:10px;color:#10B981;font-weight:600">✓ Saved</span>
+        </div>
+        <div class="mock-doc-line" style="width:90%"></div>
+        <div class="mock-doc-line" style="width:75%"></div>
+        <div class="mock-doc-line" style="width:85%"></div>
+        <div class="mock-doc-line" style="width:60%"></div>
+        <div style="position:relative;margin-top:4px">
+          <div class="mock-doc-line" style="width:80%"></div>
+          <div style="position:absolute;left:55%;top:-2px;width:2px;height:13px;background:#EF4444;border-radius:1px"></div>
+          <div style="position:absolute;left:55%;top:-14px;background:#EF4444;color:white;font-size:8px;padding:1px 5px;border-radius:3px">Alice</div>
+        </div>
+        <div class="mock-doc-line" style="width:70%;margin-top:4px"></div>
+      </div>
+      <!-- Kanban -->
+      <div class="mock-main">
+        <div style="font-size:9px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">📋 TASK BOARD</div>
+        <div style="display:flex;gap:6px;height:170px">
+          <div class="kanban-col">
+            <div class="col-header">⚫ To Do <span style="background:#E5E7EB;border-radius:9999px;padding:0 5px">2</span></div>
+            <div class="kanban-card">Design mockups</div>
+            <div class="kanban-card">Write test cases</div>
+          </div>
+          <div class="kanban-col" style="border:1.5px dashed #F59E0B;background:#FFFBEB">
+            <div class="col-header" style="color:#D97706">🟡 In Progress <span style="background:#FEF3C7;border-radius:9999px;padding:0 5px">1</span></div>
+            <div class="kanban-card">API integration</div>
+          </div>
+          <div class="kanban-col">
+            <div class="col-header" style="color:#059669">🟢 Done <span style="background:#D1FAE5;border-radius:9999px;padding:0 5px">1</span></div>
+            <div class="kanban-card">Setup repo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 9 — Real-time Doc Editing
+════════════════════════════════════════════════ -->
+<div class="slide theme-dark" id="s9">
+  <div class="section-label" style="color:#A78BFA">Feature 3</div>
+  <div class="slide-title">Real-time Document Editing</div>
+  <div class="grid-2" style="margin-top:28px">
+    <div>
+      <div class="feat-row">
+        <div class="feat-icon">⚡</div>
+        <div class="feat-text"><h4>Live Collaboration</h4><p>Changes broadcast to all members via Socket.IO within ~100 ms</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">🖱️</div>
+        <div class="feat-text"><h4>Cursor Presence</h4><p>See other users' cursors in real time with colour-coded name labels</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">💾</div>
+        <div class="feat-text"><h4>Auto-Save (500 ms)</h4><p>Debounced save after every keystroke — you never lose work</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">⚠️</div>
+        <div class="feat-text"><h4>Conflict Resolution</h4><p>2-second detection window; modal lets you choose remote or local version</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">📴</div>
+        <div class="feat-text"><h4>Offline Editing</h4><p>Write while offline → IndexedDB queue → auto-sync on reconnect</p></div>
+      </div>
+    </div>
+    <div>
+      <pre>// Socket.IO flow
+
+// User A types in editor
+socket.emit('document:edit', {
+  docId,
+  content: newContent,
+  workspaceId,
+  timestamp: Date.now()
+});
+
+// Server broadcasts to all others
+socket.to(workspaceId).emit(
+  'document:updated',
+  { docId, content, editedBy }
+);
+
+// Conflict check on receive
+if (timeDiff &lt; 2000 &amp;&amp;
+    content !== lastRemote) {
+  showConflictModal();
+}</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 10 — Kanban Task Board
+════════════════════════════════════════════════ -->
+<div class="slide theme-amber" id="s10">
+  <div class="section-label">Feature 4</div>
+  <div class="slide-title" style="color:#92400E">Kanban Task Board</div>
+  <div class="grid-2" style="margin-top:20px;align-items:start">
+    <div style="display:flex;gap:10px">
+      <div style="flex:1;background:#fff;border-radius:10px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+        <div class="col-header" style="color:#6B7280">⚫ To Do &nbsp;<span style="background:#E5E7EB;border-radius:9999px;padding:1px 8px">3</span></div>
+        <div class="kanban-card">UI wireframes</div>
+        <div class="kanban-card">Database schema</div>
+        <div class="kanban-card" style="border:1.5px dashed #7C3AED;opacity:.6">Drag me →</div>
+      </div>
+      <div style="flex:1;background:#fff;border-radius:10px;padding:12px;border:2px dashed #F59E0B;background:#FFFBEB;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+        <div class="col-header" style="color:#D97706">🟡 In Progress &nbsp;<span style="background:#FEF3C7;border-radius:9999px;padding:1px 8px">2</span></div>
+        <div class="kanban-card">Socket handler</div>
+        <div class="kanban-card">Auth middleware</div>
+      </div>
+      <div style="flex:1;background:#fff;border-radius:10px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+        <div class="col-header" style="color:#059669">🟢 Done &nbsp;<span style="background:#D1FAE5;border-radius:9999px;padding:1px 8px">2</span></div>
+        <div class="kanban-card">Project setup</div>
+        <div class="kanban-card">MongoDB models</div>
+      </div>
+    </div>
+    <div>
+      <h3 style="color:#92400E;margin-bottom:16px">Key Capabilities</h3>
+      <div class="feat-row">
+        <div class="feat-icon">🖱️</div>
+        <div class="feat-text"><h4>HTML5 Drag &amp; Drop</h4><p>Native drag API with visual highlight on target column</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">⚡</div>
+        <div class="feat-text"><h4>Optimistic UI</h4><p>State updates immediately; reverts on API failure</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">🔄</div>
+        <div class="feat-text"><h4>Real-time Sync</h4><p><code style="background:#FEF3C7;padding:1px 4px;border-radius:3px">task:updated</code> socket event keeps all members in sync</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">📴</div>
+        <div class="feat-text"><h4>Offline Queue</h4><p>Moves queued in IndexedDB and synced on reconnect</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">🔔</div>
+        <div class="feat-text"><h4>Auto-Notify</h4><p>Task creation triggers real-time notification to all members</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 11 — File Upload
+════════════════════════════════════════════════ -->
+<div class="slide theme-purple" id="s11">
+  <div class="section-label">Feature 5</div>
+  <div class="slide-title" style="color:#7C3AED">File Upload &amp; Sharing</div>
+  <div class="grid-2" style="margin-top:20px;align-items:start">
+    <div>
+      <!-- File list mockup -->
+      <div style="background:#fff;border-radius:14px;padding:16px;box-shadow:0 4px 16px rgba(124,58,237,.15);max-width:320px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:11px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.1em">FILES</span>
+          <button style="background:#7C3AED;color:white;border:none;border-radius:4px;padding:3px 10px;font-size:12px;cursor:pointer;font-weight:700">↑ Upload</button>
+        </div>
+        <div style="background:#F3F4F6;border-radius:6px;padding:7px 10px;margin-bottom:5px;display:flex;align-items:center;gap:8px;font-size:11px">
+          <span>🖼️</span>
+          <div style="flex:1">
+            <div style="font-weight:600;color:#1F2937">logo-final.png</div>
+            <div style="color:#9CA3AF;font-size:10px">48.2 KB · John</div>
+          </div>
+          <span style="color:#7C3AED;font-size:14px;cursor:pointer">↓</span>
+          <span style="color:#EF4444;font-size:14px;cursor:pointer">×</span>
+        </div>
+        <div style="background:#F3F4F6;border-radius:6px;padding:7px 10px;margin-bottom:5px;display:flex;align-items:center;gap:8px;font-size:11px">
+          <span>📕</span>
+          <div style="flex:1">
+            <div style="font-weight:600;color:#1F2937">project-brief.pdf</div>
+            <div style="color:#9CA3AF;font-size:10px">1.2 MB · Alice</div>
+          </div>
+          <span style="color:#7C3AED;font-size:14px;cursor:pointer">↓</span>
+        </div>
+        <div style="background:#F3F4F6;border-radius:6px;padding:7px 10px;display:flex;align-items:center;gap:8px;font-size:11px">
+          <span>📊</span>
+          <div style="flex:1">
+            <div style="font-weight:600;color:#1F2937">budget.xlsx</div>
+            <div style="color:#9CA3AF;font-size:10px">340 KB · Bob</div>
+          </div>
+          <span style="color:#7C3AED;font-size:14px;cursor:pointer">↓</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="color:#7C3AED;margin-bottom:16px">Key Capabilities</h3>
+      <div class="feat-row">
+        <div class="feat-icon">📁</div>
+        <div class="feat-text"><h4>10 MB limit, MIME Allowlist</h4><p>Images, PDF, Office docs, CSV, ZIP — enforced server-side by Multer</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">⬇️</div>
+        <div class="feat-text"><h4>Auth-Gated Download</h4><p>Only workspace members can download files</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">🗑️</div>
+        <div class="feat-text"><h4>Delete with Permission</h4><p>Only the uploader or workspace owner can delete files</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">⚡</div>
+        <div class="feat-text"><h4>Real-time Broadcast</h4><p><code style="background:#EDE9FE;padding:1px 4px;border-radius:3px">file:uploaded</code> event updates all members' file lists instantly</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">🔒</div>
+        <div class="feat-text"><h4>Path Traversal Protection</h4><p><code style="background:#EDE9FE;padding:1px 4px;border-radius:3px">path.basename()</code> + DB-stored filename used for all disk I/O</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 12 — Notifications
+════════════════════════════════════════════════ -->
+<div class="slide theme-light" id="s12">
+  <div class="section-label">Feature 6</div>
+  <div class="slide-title" style="color:#7C3AED">Real-time Notifications</div>
+  <div class="grid-2" style="margin-top:20px;align-items:start">
+    <div>
+      <!-- Notification dropdown mockup -->
+      <div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.12);max-width:300px">
+        <div style="padding:12px 16px;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-weight:700;font-size:14px">Notifications</span>
+          <button style="font-size:12px;color:#7C3AED;background:none;border:none;cursor:pointer;font-weight:500">Mark all read</button>
+        </div>
+        <div style="padding:12px 16px;border-bottom:1px solid #F3F4F6;background:#F5F3FF;display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:18px">📎</span>
+          <div>
+            <div style="font-size:13px;color:#1F2937">Alice uploaded "design.png"</div>
+            <div style="font-size:11px;color:#9CA3AF">2 minutes ago</div>
+          </div>
+          <div style="width:8px;height:8px;border-radius:50%;background:#7C3AED;flex-shrink:0;margin-top:4px"></div>
+        </div>
+        <div style="padding:12px 16px;border-bottom:1px solid #F3F4F6;background:#F5F3FF;display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:18px">✅</span>
+          <div>
+            <div style="font-size:13px;color:#1F2937">Bob created task "API docs"</div>
+            <div style="font-size:11px;color:#9CA3AF">15 minutes ago</div>
+          </div>
+          <div style="width:8px;height:8px;border-radius:50%;background:#7C3AED;flex-shrink:0;margin-top:4px"></div>
+        </div>
+        <div style="padding:12px 16px;display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:18px">👋</span>
+          <div>
+            <div style="font-size:13px;color:#6B7280">Carol joined the workspace</div>
+            <div style="font-size:11px;color:#9CA3AF">1 hour ago</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="color:#7C3AED;margin-bottom:16px">How it works</h3>
+      <div class="feat-row">
+        <div class="feat-icon">🚪</div>
+        <div class="feat-text"><h4>Personal Socket Room</h4><p>Each user auto-joins <code style="background:#EDE9FE;padding:1px 4px;border-radius:3px">user:{id}</code> room on connect</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">📣</div>
+        <div class="feat-text"><h4>4 Trigger Types</h4><p>📎 File uploaded · ✅ Task created · 🔄 Task updated · 👋 User joined</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">🗄️</div>
+        <div class="feat-text"><h4>Persisted in MongoDB</h4><p>Stored in <code style="background:#EDE9FE;padding:1px 4px;border-radius:3px">notifications</code> collection; latest 50 returned per user</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">🔴</div>
+        <div class="feat-text"><h4>Unread Badge</h4><p>Bell icon shows count badge; purple dot on unread items in dropdown</p></div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icon">✔️</div>
+        <div class="feat-text"><h4>Mark as Read</h4><p>Click any item or use "Mark all read" — persisted to DB</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 13 — Offline / PWA
+════════════════════════════════════════════════ -->
+<div class="slide theme-dark" id="s13">
+  <div class="section-label" style="color:#6EE7B7">Feature 7</div>
+  <div class="slide-title">Offline Support &amp; PWA</div>
+  <div style="display:flex;justify-content:center;margin:24px 0">
+    <div class="flow">
+      <div class="flow-step">
+        <span>🌐</span>
+        User Online
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="background:#FEF2F2;border:2px solid #FECACA">
+        <span>📴</span>
+        Goes Offline
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="background:#FEF3C7;border:2px solid #FDE68A">
+        <span>📝</span>
+        Keep Editing
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="background:#EDE9FE;border:2px solid #DDD6FE">
+        <span>🗄️</span>
+        IndexedDB Queue
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="background:#D1FAE5;border:2px solid #A7F3D0">
+        <span>🔄</span>
+        Back Online → Sync
+      </div>
+    </div>
+  </div>
+  <div class="grid-4" style="margin-top:8px">
+    <div class="card" style="text-align:center">
+      <div class="card-icon">⚙️</div>
+      <h3>Service Worker</h3>
+      <p>Caches static assets; stale-while-revalidate strategy for all non-API GET requests</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div class="card-icon">🚨</div>
+      <h3>Offline Banner</h3>
+      <p>Yellow full-width banner + red status badge shown whenever network is lost</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div class="card-icon">🗄️</div>
+      <h3>IndexedDB</h3>
+      <p>3 stores: <em>pending_edits</em>, <em>cached_docs</em>, <em>pending_tasks</em></p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div class="card-icon">🔁</div>
+      <h3>Auto Sync</h3>
+      <p>syncPendingEdits + syncPendingTasks flush all queued changes when back online</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 14 — Security
+════════════════════════════════════════════════ -->
+<div class="slide theme-light" id="s14">
+  <div class="section-label">Security</div>
+  <div class="slide-title" style="color:#7C3AED">Security-First Design</div>
+  <table style="margin-top:20px">
+    <thead>
+      <tr><th>Layer</th><th>Measure</th><th>Details</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>🔏 Passwords</td><td>bcrypt hashing</td><td>12 salt rounds — computationally expensive to brute-force</td></tr>
+      <tr><td>🍪 Sessions</td><td>JWT HttpOnly cookie</td><td>Not accessible to JavaScript; 7-day expiry</td></tr>
+      <tr><td>🚦 Rate Limiting</td><td>express-rate-limit</td><td>Auth: 20 req / 15 min · General API: 200 req / min</td></tr>
+      <tr><td>🛡️ CSRF</td><td>Origin/Referer check</td><td>Server verifies header on every state-changing request</td></tr>
+      <tr><td>💉 NoSQL Injection</td><td>Input type-checking</td><td>Types validated before any DB query</td></tr>
+      <tr><td>📁 File Safety</td><td>MIME allowlist + size cap</td><td>Only safe types; max 10 MB; enforced by Multer</td></tr>
+      <tr><td>🗂️ Path Traversal</td><td>path.basename()</td><td>DB-stored filename used for all actual disk operations</td></tr>
+      <tr><td>👁️ Access Control</td><td>Membership checks</td><td>Every API endpoint verifies workspace membership + role</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 15 — Summary / Thank You
+════════════════════════════════════════════════ -->
+<div class="slide theme-hero" id="s15">
+  <div style="font-size:64px;margin-bottom:12px">🚀</div>
+  <div class="slide-title">SyncSpace</div>
+  <div class="slide-subtitle" style="margin-bottom:32px">
+    A production-ready collaborative workspace platform built with the MERN stack,
+    real-time Socket.IO, file sharing, notifications, and full offline PWA support.
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;width:100%;max-width:860px;margin-bottom:32px">
+    <div class="card" style="text-align:center">
+      <div style="font-size:28px">📄</div><div style="font-size:13px;margin-top:6px">Live Doc Editing</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:28px">📋</div><div style="font-size:13px;margin-top:6px">Kanban Board</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:28px">📎</div><div style="font-size:13px;margin-top:6px">File Sharing</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:28px">🔔</div><div style="font-size:13px;margin-top:6px">Notifications</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">MongoDB</span>
+    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">Express</span>
+    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">React 18</span>
+    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">Node.js</span>
+    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">Socket.IO</span>
+    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">Multer</span>
+    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">JWT</span>
+    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">IndexedDB</span>
+    <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">PWA</span>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- Navigation -->
+<div id="nav">
+  <button id="prev" onclick="go(-1)" disabled>‹</button>
+  <div class="dot-row" id="dots"></div>
+  <span id="counter">1 / 15</span>
+  <button id="next" onclick="go(1)">›</button>
+</div>
+
+<script>
+const TOTAL = 15;
+let cur = 1;
+
+// Build dots
+const dotsEl = document.getElementById('dots');
+for(let i=1;i<=TOTAL;i++){
+  const d = document.createElement('div');
+  d.className = 'dot' + (i===1?' on':'');
+  d.onclick = ()=>jump(i);
+  dotsEl.appendChild(d);
+}
+
+function show(n){
+  document.getElementById('s'+cur).classList.remove('active');
+  cur = Math.max(1,Math.min(TOTAL,n));
+  document.getElementById('s'+cur).classList.add('active');
+  document.getElementById('counter').textContent = cur + ' / ' + TOTAL;
+  document.getElementById('prev').disabled = cur===1;
+  document.getElementById('next').disabled = cur===TOTAL;
+  dotsEl.querySelectorAll('.dot').forEach((d,i)=>{
+    d.classList.toggle('on', i+1===cur);
+  });
+}
+
+function go(dir){ show(cur+dir); }
+function jump(n){ show(n); }
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' ') go(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp') go(-1);
+});
+
+// Touch/swipe support
+let startX=0;
+document.addEventListener('touchstart',e=>startX=e.touches[0].clientX,{passive:true});
+document.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-startX;
+  if(Math.abs(dx)>50) go(dx<0?1:-1);
+},{passive:true});
+</script>
+</body>
+</html>
