@@ -9,6 +9,7 @@ const {
   refresh,
   forgotPassword,
   updatePreferences,
+  getCsrfToken,
 } = require('../controllers/auth.controller');
 const { protect } = require('../middleware/auth.middleware');
 
@@ -22,6 +23,7 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+router.get('/csrf-token', getCsrfToken);
 router.post('/signup', authLimiter, signup);
 router.post('/login', authLimiter, login);
 router.post('/demo', authLimiter, demoLogin);

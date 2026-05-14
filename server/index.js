@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const csurf = require('csurf');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth.routes');
@@ -15,6 +16,7 @@ const app = express();
 const server = http.createServer(app);
 
 const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:3000';
+const isProduction = process.env.NODE_ENV === 'production';
 
 const generalLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -39,6 +41,29 @@ app.use((req, res, next) => {
     }
   }
   return next();
+});
+
+const csrfProtection = csurf({
+  cookie: {
+    key: '_csrf',
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'strict' : 'lax',
+    path: '/',
+  },
+});
+
+app.use(csrfProtection);
+app.use((req, res, next) => {
+  const csrfToken = req.csrfToken();
+  res.locals.csrfToken = csrfToken;
+  res.cookie('csrfToken', csrfToken, {
+    httpOnly: false,
+    secure: isProduction,
+    sameSite: isProduction ? 'strict' : 'lax',
+    path: '/',
+  });
+  next();
 });
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', app: 'NoteMesh' }));

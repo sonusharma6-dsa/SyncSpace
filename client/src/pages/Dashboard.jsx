@@ -256,16 +256,14 @@ const Dashboard = () => {
   const handleUploadFiles = async (files) => {
     if (!selectedNoteId || !files.length) return;
     try {
-      const uploaded = [];
-      // eslint-disable-next-line no-restricted-syntax
-      for (const file of files) {
+      const uploaded = await Promise.all(files.map(async (file) => {
         const formData = new FormData();
         formData.append('file', file);
         const { data } = await axios.post(`/api/notes/${selectedNoteId}/attachments`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
-        uploaded.push(data.attachment);
-      }
+        return data.attachment;
+      }));
       setAttachments((current) => [...uploaded, ...current]);
       appendAttachmentMarkdown(uploaded);
       showToast(`${uploaded.length} attachment${uploaded.length > 1 ? 's' : ''} added.`);

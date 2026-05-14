@@ -4,6 +4,28 @@ import axios from 'axios';
 axios.defaults.withCredentials = true;
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || '';
 
+const getCookie = (name) => document.cookie
+  .split('; ')
+  .find((cookie) => cookie.startsWith(`${name}=`))
+  ?.split('=')
+  .slice(1)
+  .join('=');
+
+axios.interceptors.request.use((config) => {
+  const method = String(config.method || 'get').toUpperCase();
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    const csrfToken = getCookie('csrfToken');
+    if (csrfToken) {
+      config.headers = {
+        ...config.headers,
+        'x-csrf-token': decodeURIComponent(csrfToken),
+      };
+    }
+  }
+
+  return config;
+});
+
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -13,6 +35,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        await axios.get('/api/auth/csrf-token');
         const { data } = await axios.get('/api/auth/me');
         setUser(data.user);
       } catch (_err) {

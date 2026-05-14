@@ -166,12 +166,10 @@ exports.forgotPassword = async (req, res, next) => {
     }
 
     const sanitizedEmail = String(email).toLowerCase().trim();
-    const user = await User.findOne({ email: sanitizedEmail }).select('_id');
+    await User.findOne({ email: sanitizedEmail }).select('_id');
 
     res.json({
-      message: user
-        ? 'If that email exists, a reset link would be sent in a production deployment.'
-        : 'If that email exists, a reset link would be sent in a production deployment.',
+      message: 'If that email exists, a reset link would be sent in a production deployment.',
     });
   } catch (err) {
     next(err);
@@ -197,4 +195,8 @@ exports.updatePreferences = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+exports.getCsrfToken = (req, res) => {
+  res.json({ csrfToken: res.locals.csrfToken });
 };

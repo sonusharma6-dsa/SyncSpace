@@ -60,11 +60,31 @@ const stripMarkdown = (value = '') => value
   .trim();
 
 const buildExcerpt = (content = '') => stripMarkdown(content).slice(0, 180);
-const toSlug = (title = 'untitled-note') => title
-  .toLowerCase()
-  .trim()
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-+|-+$/g, '') || 'untitled-note';
+const toSlug = (title = 'untitled-note') => {
+  const input = String(title).trim().toLowerCase();
+  let slug = '';
+  let lastWasDash = false;
+
+  for (let index = 0; index < input.length; index += 1) {
+    const char = input[index];
+    const code = input.charCodeAt(index);
+    const isAlphaNumeric = (code >= 48 && code <= 57) || (code >= 97 && code <= 122);
+
+    if (isAlphaNumeric) {
+      slug += char;
+      lastWasDash = false;
+    } else if (!lastWasDash && slug) {
+      slug += '-';
+      lastWasDash = true;
+    }
+  }
+
+  if (slug.endsWith('-')) {
+    slug = slug.slice(0, -1);
+  }
+
+  return slug || 'untitled-note';
+};
 
 const normalizeTags = (input) => {
   const values = Array.isArray(input)
