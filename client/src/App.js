@@ -1,29 +1,38 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { WorkspaceProvider } from './context/WorkspaceContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { ToastProvider } from './context/ToastContext';
+import ProtectedRoute from './components/UI/ProtectedRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
-import WorkspacePage from './pages/WorkspacePage';
-import OfflineBanner from './components/UI/OfflineBanner';
-import ProtectedRoute from './components/UI/ProtectedRoute';
+import Settings from './pages/Settings';
+import SharedNote from './pages/SharedNote';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
     <AuthProvider>
-      <WorkspaceProvider>
-        <BrowserRouter>
-          <OfflineBanner />
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/workspace/:id" element={<ProtectedRoute><WorkspacePage /></ProtectedRoute>} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </WorkspaceProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/share/:token" element={<SharedNote />} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/archive" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/trash" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </ToastProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

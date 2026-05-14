@@ -1,11 +1,12 @@
 {
-  "name": "syncspace-server",
+  "name": "notemesh-server",
   "version": "1.0.0",
-  "description": "SyncSpace backend server",
+  "description": "NoteMesh backend server",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "seed": "node scripts/seed.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

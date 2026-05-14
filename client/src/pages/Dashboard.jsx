@@ -1,138 +1,432 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Command, LogOut, Menu, Plus } from 'lucide-react';
+import NoteSidebar from '../components/Notes/NoteSidebar';
+import NoteEditorPane from '../components/Notes/NoteEditorPane';
+import CommandPalette from '../components/Notes/CommandPalette';
 import { useAuth } from '../context/AuthContext';
-import { useWorkspace } from '../context/WorkspaceContext';
-import StatusBadge from '../components/UI/StatusBadge';
-import { useOffline } from '../hooks/useOffline';
+import { useToast } from '../context/ToastContext';
+import { useTheme } from '../context/ThemeContext';
+
+const emptyDraft = { title: '', content: '', tags: [] };
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
-  const { workspaces, setWorkspaces } = useWorkspace();
-  const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [joining, setJoining] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
-  const [error, setError] = useState('');
-  const isOffline = useOffline();
+  const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const { showToast } = useToast();
+  const { cycleTheme } = useTheme();
+
+  const currentView = pathname === '/archive' ? 'archived' : pathname === '/trash' ? 'trash' : 'active';
+  const [notes, setNotes] = useState([]);
+  const [counts, setCounts] = useState({ active: 0, archived: 0, trash: 0, pinned: 0 });
+  const [tags, setTags] = useState([]);
+  const [recentNotes, setRecentNotes] = useState([]);
+  const [selectedNoteId, setSelectedNoteId] = useState('');
+  const [selectedNote, setSelectedNote] = useState(null);
+  const [attachments, setAttachments] = useState([]);
+  const [shareUrl, setShareUrl] = useState('');
+  const [draft, setDraftState] = useState(emptyDraft);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState('');
+  const [sort, setSort] = useState('updated');
+  const [mode, setMode] = useState('split');
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [tagInput, setTagInput] = useState('');
 
   useEffect(() => {
-    fetchWorkspaces();
+    const timer = window.setTimeout(() => setDebouncedQuery(query), 250);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  const setDraft = useCallback((updater) => {
+    setDraftState((current) => {
+      const nextValue = typeof updater === 'function' ? updater(current) : updater;
+      return nextValue;
+    });
+    setDirty(true);
   }, []);
 
-  const fetchWorkspaces = async () => {
+  const loadNotes = useCallback(async () => {
+    setLoading(true);
     try {
-      const { data } = await axios.get('/api/workspaces');
-      setWorkspaces(data.workspaces);
-    } catch (err) {
-      console.error(err);
+      const { data } = await axios.get('/api/notes', {
+        params: {
+          status: currentView,
+          q: debouncedQuery || undefined,
+          tag: selectedTag || undefined,
+          sort,
+        },
+      });
+
+      setNotes(data.notes || []);
+      setCounts(data.counts || { active: 0, archived: 0, trash: 0, pinned: 0 });
+      setTags(data.tags || []);
+      setRecentNotes(data.recentNotes || []);
+
+      const nextNotes = data.notes || [];
+      setSelectedNoteId((current) => {
+        if (current && nextNotes.some((note) => note._id === current)) {
+          return current;
+        }
+        return nextNotes[0]?._id || '';
+      });
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Unable to load notes.', 'error');
     } finally {
       setLoading(false);
     }
+  }, [currentView, debouncedQuery, selectedTag, showToast, sort]);
+
+  const loadSelectedNote = useCallback(async () => {
+    if (!selectedNoteId) {
+      setSelectedNote(null);
+      setAttachments([]);
+      setShareUrl('');
+      setDraftState(emptyDraft);
+      setDirty(false);
+      return;
+    }
+
+    try {
+      const { data } = await axios.get(`/api/notes/${selectedNoteId}`);
+      setSelectedNote(data.note);
+      setAttachments(data.attachments || []);
+      setShareUrl(data.shareLink?.isActive ? `${window.location.origin}/share/${data.shareLink.token}` : '');
+      setDraftState({
+        title: data.note.title || '',
+        content: data.note.content || '',
+        tags: data.note.tags || [],
+      });
+      setDirty(false);
+      setTagInput('');
+    } catch (error) {
+      setSelectedNoteId('');
+      showToast(error.response?.data?.message || 'Unable to open note.', 'error');
+    }
+  }, [selectedNoteId, showToast]);
+
+  useEffect(() => {
+    loadNotes();
+  }, [loadNotes]);
+
+  useEffect(() => {
+    loadSelectedNote();
+  }, [loadSelectedNote]);
+
+  const handleSave = useCallback(async (silent = false) => {
+    if (!selectedNoteId || !dirty || selectedNote?.isDeleted) return;
+    setSaving(true);
+    try {
+      const { data } = await axios.patch(`/api/notes/${selectedNoteId}`, draft);
+      setSelectedNote(data.note);
+      setNotes((current) => current.map((note) => (note._id === data.note._id ? data.note : note)));
+      setRecentNotes((current) => {
+        const next = [data.note, ...current.filter((note) => note._id !== data.note._id)];
+        return next.slice(0, 5);
+      });
+      setDirty(false);
+      if (!silent) showToast('Note saved.');
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Unable to save note.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }, [dirty, draft, selectedNote?.isDeleted, selectedNoteId, showToast]);
+
+  useEffect(() => {
+    if (!selectedNoteId || !dirty || selectedNote?.isDeleted) return undefined;
+    const timer = window.setTimeout(() => {
+      handleSave(true);
+    }, 1600);
+    return () => window.clearTimeout(timer);
+  }, [dirty, handleSave, selectedNote?.isDeleted, selectedNoteId]);
+
+  const refreshAndSelect = async (noteId = '') => {
+    await loadNotes();
+    if (noteId) setSelectedNoteId(noteId);
   };
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    setError('');
-    if (!newName.trim()) return;
-    setCreating(true);
+  const handleCreateNote = useCallback(async () => {
     try {
-      const { data } = await axios.post('/api/workspaces', { name: newName });
-      setWorkspaces(prev => [...prev, data.workspace]);
-      setNewName('');
-      navigate(`/workspace/${data.workspace._id}`);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create workspace');
-    } finally {
-      setCreating(false);
+      if (currentView !== 'active') {
+        navigate('/dashboard');
+      }
+      const { data } = await axios.post('/api/notes', { title: 'Untitled note', content: '', tags: [] });
+      setQuery('');
+      setSelectedTag('');
+      setSelectedNoteId(data.note._id);
+      setSelectedNote(data.note);
+      setDraftState({ title: data.note.title, content: data.note.content, tags: data.note.tags || [] });
+      setDirty(false);
+      showToast('New note created.');
+      if (currentView === 'active') {
+        await loadNotes();
+      }
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Unable to create note.', 'error');
+    }
+  }, [currentView, loadNotes, navigate, showToast]);
+
+  const handleDuplicate = async () => {
+    if (!selectedNoteId) return;
+    try {
+      const { data } = await axios.post(`/api/notes/${selectedNoteId}/duplicate`);
+      showToast('Note duplicated.');
+      await refreshAndSelect(data.note._id);
+      navigate(data.note.isArchived ? '/archive' : '/dashboard');
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Unable to duplicate note.', 'error');
     }
   };
 
-  const handleJoin = async (e) => {
-    e.preventDefault();
-    setError('');
-    if (!inviteCode.trim()) return;
-    setJoining(true);
+  const toggleBooleanField = async (field) => {
+    if (!selectedNoteId || !selectedNote) return;
     try {
-      const { data } = await axios.post('/api/workspaces/join', { inviteCode });
-      setWorkspaces(prev => [...prev, data.workspace]);
-      setInviteCode('');
-      navigate(`/workspace/${data.workspace._id}`);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to join workspace');
-    } finally {
-      setJoining(false);
+      const { data } = await axios.patch(`/api/notes/${selectedNoteId}`, { [field]: !selectedNote[field] });
+      showToast(field === 'isPinned' ? (data.note.isPinned ? 'Note pinned.' : 'Note unpinned.') : (data.note.isArchived ? 'Note archived.' : 'Note moved back to notes.'));
+      setSelectedNote(data.note);
+      await loadNotes();
+      if (field === 'isArchived') {
+        navigate(data.note.isArchived ? '/archive' : '/dashboard');
+      }
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Unable to update note.', 'error');
     }
   };
+
+  const handleDelete = async () => {
+    if (!selectedNoteId) return;
+    try {
+      await axios.delete(`/api/notes/${selectedNoteId}`);
+      setSelectedNoteId('');
+      setSelectedNote(null);
+      showToast('Note moved to trash.');
+      navigate('/trash');
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Unable to move note to trash.', 'error');
+    }
+  };
+
+  const handleRestore = async () => {
+    if (!selectedNoteId) return;
+    try {
+      const { data } = await axios.post(`/api/notes/${selectedNoteId}/restore`);
+      showToast('Note restored.');
+      navigate('/dashboard');
+      await refreshAndSelect(data.note._id);
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Unable to restore note.', 'error');
+    }
+  };
+
+  const handleCreateShare = async () => {
+    if (!selectedNoteId) return;
+    try {
+      const { data } = await axios.post(`/api/notes/${selectedNoteId}/share`);
+      setShareUrl(data.shareUrl);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(data.shareUrl);
+      }
+      showToast('Share link copied to clipboard.');
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Unable to create share link.', 'error');
+    }
+  };
+
+  const appendAttachmentMarkdown = (uploadedAttachments) => {
+    const markdown = uploadedAttachments.map((attachment) => (
+      attachment.fileType.startsWith('image/')
+        ? `![${attachment.originalName}](${attachment.fileUrl})`
+        : `[${attachment.originalName}](${attachment.fileUrl})`
+    )).join('\n');
+
+    setDraft((current) => ({
+      ...current,
+      content: `${current.content.trimEnd()}${current.content ? '\n\n' : ''}${markdown}`,
+    }));
+  };
+
+  const handleUploadFiles = async (files) => {
+    if (!selectedNoteId || !files.length) return;
+    try {
+      const uploaded = [];
+      // eslint-disable-next-line no-restricted-syntax
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const { data } = await axios.post(`/api/notes/${selectedNoteId}/attachments`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        uploaded.push(data.attachment);
+      }
+      setAttachments((current) => [...uploaded, ...current]);
+      appendAttachmentMarkdown(uploaded);
+      showToast(`${uploaded.length} attachment${uploaded.length > 1 ? 's' : ''} added.`);
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Unable to upload files.', 'error');
+    }
+  };
+
+  const handleAddTag = (rawTag) => {
+    const normalized = String(rawTag || '').trim().toLowerCase().replace(/[^a-z0-9- ]/g, '').replace(/\s+/g, '-');
+    if (!normalized || draft.tags.includes(normalized)) {
+      setTagInput('');
+      return;
+    }
+
+    setDraft((current) => ({ ...current, tags: [...current.tags, normalized].slice(0, 8) }));
+    setTagInput('');
+  };
+
+  const handleRemoveTag = (tag) => setDraft((current) => ({
+    ...current,
+    tags: current.tags.filter((item) => item !== tag),
+  }));
+
+  const tagSuggestions = useMemo(() => tags.filter((tag) => (
+    tagInput &&
+    tag.name.includes(tagInput.toLowerCase()) &&
+    !draft.tags.includes(tag.name)
+  )).slice(0, 5), [draft.tags, tagInput, tags]);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      const targetTag = event.target.tagName;
+      const isTyping = ['INPUT', 'TEXTAREA', 'SELECT'].includes(targetTag) || event.target.isContentEditable;
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setPaletteOpen(true);
+      }
+
+      if (!isTyping && event.key === '/') {
+        event.preventDefault();
+        document.getElementById('note-search')?.focus();
+      }
+
+      if (!isTyping && event.key.toLowerCase() === 'n') {
+        event.preventDefault();
+        handleCreateNote();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleCreateNote]);
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#F9FAFB' }}>
-      <header style={{ background: 'white', borderBottom: '1px solid #E5E7EB', padding: '0 24px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '24px' }}>🚀</span>
-          <span style={{ fontWeight: 800, fontSize: '20px', color: '#7C3AED' }}>SyncSpace</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <StatusBadge online={!isOffline} />
-          <span style={{ fontSize: '14px', color: '#374151' }}>👋 {user?.name}</span>
-          <button onClick={handleLogout} style={{ padding: '6px 14px', background: '#F3F4F6', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>Logout</button>
-        </div>
-      </header>
-      
-      <main style={{ maxWidth: '900px', margin: '0 auto', padding: '32px 24px' }}>
-        <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#1F2937', marginTop: 0 }}>Your Workspaces</h2>
-        
-        {error && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>{error}</div>}
+  const title = currentView === 'trash' ? 'Trash' : currentView === 'archived' ? 'Archive' : 'Notes';
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '32px' }}>
-          <form onSubmit={handleCreate} style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #E5E7EB' }}>
-            <h3 style={{ marginTop: 0, fontSize: '16px', color: '#1F2937' }}>Create Workspace</h3>
-            <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Workspace name..." style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E7EB', borderRadius: '8px', outline: 'none', fontSize: '14px', boxSizing: 'border-box', marginBottom: '12px' }} />
-            <button type="submit" disabled={creating || !newName.trim()} style={{ width: '100%', padding: '10px', background: '#7C3AED', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '14px' }}>
-              {creating ? 'Creating...' : 'Create'}
-            </button>
-          </form>
-          
-          <form onSubmit={handleJoin} style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #E5E7EB' }}>
-            <h3 style={{ marginTop: 0, fontSize: '16px', color: '#1F2937' }}>Join Workspace</h3>
-            <input value={inviteCode} onChange={e => setInviteCode(e.target.value.toUpperCase())} placeholder="Enter invite code..." maxLength={6} style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E7EB', borderRadius: '8px', outline: 'none', fontSize: '14px', boxSizing: 'border-box', marginBottom: '12px', fontFamily: 'monospace', letterSpacing: '0.1em' }} />
-            <button type="submit" disabled={joining || inviteCode.length !== 6} style={{ width: '100%', padding: '10px', background: '#10B981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '14px' }}>
-              {joining ? 'Joining...' : 'Join'}
-            </button>
-          </form>
-        </div>
+  return (
+    <div className="app-frame">
+      <NoteSidebar
+        user={user}
+        notes={notes}
+        counts={counts}
+        tags={tags}
+        recentNotes={recentNotes}
+        currentView={currentView}
+        selectedTag={selectedTag}
+        search={query}
+        sort={sort}
+        selectedNoteId={selectedNoteId}
+        onCreateNote={handleCreateNote}
+        onSearchChange={setQuery}
+        onSortChange={setSort}
+        onTagSelect={setSelectedTag}
+        onSelectNote={setSelectedNoteId}
+        onOpenSearch={() => document.getElementById('note-search')?.focus()}
+        onOpenCommandPalette={() => setPaletteOpen(true)}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+      />
+
+      <main className="workspace-main">
+        <header className="workspace-topbar">
+          <div>
+            <div className="topbar-title-row">
+              <button type="button" className="ghost-button icon-only mobile-only" onClick={() => setMobileSidebarOpen((current) => !current)} aria-label="Toggle sidebar">
+                <Menu size={18} />
+              </button>
+              <span className="eyebrow">{title}</span>
+            </div>
+            <h2>{selectedTag ? `#${selectedTag}` : debouncedQuery ? `Results for “${debouncedQuery}”` : title}</h2>
+          </div>
+          <div className="topbar-actions">
+            <button type="button" className="ghost-button" onClick={() => setPaletteOpen(true)}><Command size={16} />Command</button>
+            <button type="button" className="primary-button" onClick={handleCreateNote}><Plus size={16} />New</button>
+            <button type="button" className="ghost-button" onClick={handleLogout}><LogOut size={16} />Logout</button>
+          </div>
+        </header>
 
         {loading ? (
-          <div style={{ textAlign: 'center', color: '#6B7280', padding: '40px' }}>Loading workspaces...</div>
-        ) : workspaces.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#9CA3AF', padding: '60px', background: 'white', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏢</div>
-            <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>No workspaces yet</div>
-            <div style={{ fontSize: '14px' }}>Create or join a workspace to get started</div>
+          <div className="editor-shell skeleton-card">
+            <div className="skeleton-line large" />
+            <div className="skeleton-line medium" />
+            <div className="skeleton-grid">
+              <div className="skeleton-panel" />
+              <div className="skeleton-panel" />
+            </div>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
-            {workspaces.map(ws => (
-              <div key={ws._id} onClick={() => navigate(`/workspace/${ws._id}`)} style={{ background: 'white', borderRadius: '12px', padding: '20px', border: '1px solid #E5E7EB', cursor: 'pointer', transition: 'box-shadow 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}
-                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.15)'}
-                onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'}
-              >
-                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #7C3AED, #4F46E5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', marginBottom: '12px' }}>🏢</div>
-                <div style={{ fontWeight: 700, fontSize: '16px', color: '#1F2937', marginBottom: '4px' }}>{ws.name}</div>
-                <div style={{ fontSize: '13px', color: '#6B7280' }}>{ws.members?.length || 0} members</div>
-                <div style={{ marginTop: '12px', padding: '4px 8px', background: '#EDE9FE', borderRadius: '4px', display: 'inline-block', fontSize: '11px', color: '#7C3AED', fontFamily: 'monospace', fontWeight: 600 }}>{ws.inviteCode}</div>
-              </div>
-            ))}
-          </div>
+          <>
+            {notes.length === 0 && currentView === 'active' && !query && !selectedTag ? (
+              <section className="editor-shell empty-card large">
+                <h2>Capture your first note</h2>
+                <p>Use NoteMesh for class notes, writing drafts, meeting capture, code snippets, and research highlights.</p>
+                <div className="empty-actions">
+                  <button type="button" className="primary-button" onClick={handleCreateNote}>Create first note</button>
+                  <Link to="/settings" className="ghost-button">Open settings</Link>
+                </div>
+              </section>
+            ) : (
+              <NoteEditorPane
+                note={selectedNote}
+                draft={draft}
+                setDraft={setDraft}
+                dirty={dirty}
+                saving={saving}
+                mode={mode}
+                setMode={setMode}
+                attachments={attachments}
+                shareUrl={shareUrl}
+                tagInput={tagInput}
+                setTagInput={setTagInput}
+                tagSuggestions={tagSuggestions}
+                onAddTag={handleAddTag}
+                onRemoveTag={handleRemoveTag}
+                onSave={() => handleSave(false)}
+                onDuplicate={handleDuplicate}
+                onTogglePinned={() => toggleBooleanField('isPinned')}
+                onToggleArchived={() => toggleBooleanField('isArchived')}
+                onDelete={handleDelete}
+                onRestore={handleRestore}
+                onCreateShare={handleCreateShare}
+                onUploadFiles={handleUploadFiles}
+              />
+            )}
+          </>
         )}
       </main>
+
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        onNewNote={handleCreateNote}
+        onFocusSearch={() => document.getElementById('note-search')?.focus()}
+        onToggleTheme={cycleTheme}
+      />
     </div>
   );
 };
