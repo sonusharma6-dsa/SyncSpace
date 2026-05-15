@@ -1,25 +1,28 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-  password: { type: String, required: true, minlength: 6 },
-  workspaces: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Workspace' }],
-  createdAt: { type: Date, default: Date.now },
-});
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password: { type: String, required: true, minlength: 6 },
+    themePreference: { type: String, enum: ['light', 'dark', 'system'], default: 'system' },
+    lastLoginAt: { type: Date },
+  },
+  { timestamps: true }
+);
 
-userSchema.pre('save', async function (next) {
+userSchema.pre('save', async function savePassword(next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
 
-userSchema.methods.comparePassword = async function (candidatePassword) {
+userSchema.methods.comparePassword = async function comparePassword(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-userSchema.methods.toJSON = function () {
+userSchema.methods.toJSON = function toJSON() {
   const obj = this.toObject();
   delete obj.password;
   return obj;

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import AuthShell from '../components/Auth/AuthShell';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
@@ -7,50 +8,60 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, loginWithDemo } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
     try {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || 'Unable to sign in right now.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDemo = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await loginWithDemo();
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to launch demo mode.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%)' }}>
-      <div style={{ background: 'white', borderRadius: '16px', padding: '40px', width: '100%', maxWidth: '400px', boxShadow: '0 25px 50px rgba(0,0,0,0.15)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ fontSize: '40px', marginBottom: '8px' }}>🚀</div>
-          <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 800, color: '#7C3AED' }}>SyncSpace</h1>
-          <p style={{ margin: '8px 0 0', color: '#6B7280', fontSize: '14px' }}>Sign in to your account</p>
-        </div>
-        {error && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E7EB', borderRadius: '8px', outline: 'none', fontSize: '14px', boxSizing: 'border-box' }} placeholder="you@example.com" />
-          </div>
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required style={{ width: '100%', padding: '10px 12px', border: '1px solid #E5E7EB', borderRadius: '8px', outline: 'none', fontSize: '14px', boxSizing: 'border-box' }} placeholder="••••••••" />
-          </div>
-          <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: loading ? '#A78BFA' : '#7C3AED', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}>
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
-        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#6B7280' }}>
-          Don't have an account? <Link to="/signup" style={{ color: '#7C3AED', fontWeight: 600, textDecoration: 'none' }}>Sign up</Link>
-        </p>
+    <AuthShell
+      eyebrow="Welcome back"
+      title="A calmer place for markdown notes"
+      description="Quick capture, live preview, instant search, and clean organization without folder sprawl."
+      footer={<p>New here? <Link to="/signup">Create an account</Link></p>}
+    >
+      {error && <div className="inline-alert error">{error}</div>}
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <label>
+          <span>Email</span>
+          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required />
+        </label>
+        <label>
+          <span>Password</span>
+          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" required />
+        </label>
+        <button type="submit" className="primary-button wide" disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button>
+      </form>
+      <div className="auth-card-actions">
+        <button type="button" className="ghost-button wide" onClick={handleDemo} disabled={loading}>Try demo mode</button>
+        <Link to="/forgot-password" className="text-button">Forgot password?</Link>
       </div>
-    </div>
+    </AuthShell>
   );
 };
 
